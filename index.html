@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proposed CD 3 Data Analytics</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
     <style>
         body {
             margin: 0;
@@ -229,9 +230,8 @@
             <div class="section" id="selectionSection">
                 <div class="section-title">🎯 Selection Tools</div>
                 <div class="selection-tools">
-                    <button class="tool-button" id="selectRect" onclick="toggleRectangleMode()">⬜ Rectangle</button>
-                    <button class="tool-button" id="clearSelection" onclick="clearAllSelections()">🗑️ Clear</button>
-                    <div class="mode-info" id="modeInfo"></div>
+                    <button class="tool-button" id="clearSelection" onclick="clearAllSelections()">🗑️ Clear All</button>
+                    <div class="mode-info">Use drawing tools in top-right corner of map</div>
                 </div>
             </div>
             
@@ -319,12 +319,11 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.min.js"></script>
     <script>
         let map, geoJsonLayer, selectedFeatures = [];
         let originalData = null;
-        let isRectangleMode = false;
-        let rectangleStartPoint = null;
-        let currentRectangle = null;
+        let drawnItems = null;
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -342,90 +341,57 @@
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            setupRectangleSelection();
+            setupDrawingControls();
             loadGeoJSONFromFile();
             
             console.log('✅ Map initialized');
         }
 
-        // Setup rectangle selection
-        function setupRectangleSelection() {
-            map.on('mousedown', function(e) {
-                if (isRectangleMode) {
-                    rectangleStartPoint = e.latlng;
-                    if (currentRectangle) {
-                        map.removeLayer(currentRectangle);
-                    }
+        // Setup Leaflet Draw controls
+        function setupDrawingControls() {
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            const drawControl = new L.Control.Draw({
+                position: 'topright',
+                draw: {
+                    polygon: true,
+                    rectangle: true,
+                    circle: true,
+                    polyline: false,
+                    marker: false,
+                    circlemarker: false
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    remove: true
                 }
             });
+            map.addControl(drawControl);
 
-            map.on('mousemove', function(e) {
-                if (isRectangleMode && rectangleStartPoint) {
-                    if (currentRectangle) {
-                        map.removeLayer(currentRectangle);
-                    }
-                    
-                    const bounds = L.latLngBounds(rectangleStartPoint, e.latlng);
-                    currentRectangle = L.rectangle(bounds, {
-                        color: '#ff7800',
-                        weight: 2,
-                        fillOpacity: 0.2
-                    }).addTo(map);
-                }
+            // Handle drawing events
+            map.on(L.Draw.Event.CREATED, function(e) {
+                const layer = e.layer;
+                drawnItems.addLayer(layer);
+                selectFeaturesInDrawnArea(layer);
             });
 
-            map.on('mouseup', function(e) {
-                if (isRectangleMode && rectangleStartPoint) {
-                    const bounds = L.latLngBounds(rectangleStartPoint, e.latlng);
-                    selectFeaturesInRectangle(bounds);
-                    rectangleStartPoint = null;
-                    
-                    if (currentRectangle) {
-                        map.removeLayer(currentRectangle);
-                        currentRectangle = null;
-                    }
-                    
-                    toggleRectangleMode(); // Exit rectangle mode
-                }
+            map.on(L.Draw.Event.DELETED, function(e) {
+                selectedFeatures = [];
+                updateSummary();
+                resetHighlight();
             });
         }
 
-        // Toggle rectangle mode
+        // Remove old rectangle functions and replace with draw selection
         function toggleRectangleMode() {
-            isRectangleMode = !isRectangleMode;
-            const button = document.getElementById('selectRect');
-            const modeInfo = document.getElementById('modeInfo');
-            
-            if (isRectangleMode) {
-                button.classList.add('active');
-                button.textContent = '✋ Exit Rectangle';
-                modeInfo.textContent = 'Click and drag to select';
-                map.getContainer().style.cursor = 'crosshair';
-            } else {
-                button.classList.remove('active');
-                button.textContent = '⬜ Rectangle';
-                modeInfo.textContent = '';
-                map.getContainer().style.cursor = '';
-            }
+            // This is now handled by Leaflet Draw - remove custom implementation
+            updateStatus('ℹ️ Use the drawing tools in the top-right corner of the map');
         }
 
-        // Clear selections
         function clearAllSelections() {
             selectedFeatures = [];
-            isRectangleMode = false;
-            
-            const button = document.getElementById('selectRect');
-            const modeInfo = document.getElementById('modeInfo');
-            button.classList.remove('active');
-            button.textContent = '⬜ Rectangle';
-            modeInfo.textContent = '';
-            map.getContainer().style.cursor = '';
-            
-            if (currentRectangle) {
-                map.removeLayer(currentRectangle);
-                currentRectangle = null;
-            }
-            
+            drawnItems.clearLayers();
             resetHighlight();
             updateSummary();
         }
@@ -460,13 +426,13 @@
             }
         }
 
-        // Create dummy data
+        // Create dummy data - use decimal format for percentages
         function useDummyData() {
-            console.log('🧪 Creating dummy data...');
+            console.log('🧪 Creating dummy data with decimal percentages...');
             
             const features = [];
             const counties = ["Jefferson", "Harris", "Dallas", "Travis", "Bexar", "Williamson", "Collin", "Fort Bend", "Denton", "Hays", "Brazoria", "Galveston", "Montgomery", "Tarrant", "Bell", "Parker", "Ellis", "Johnson", "Kaufman", "Henderson"];
-            const demPercentages = [65.0, 67.2, 72.9, 73.4, 67.1, 58.0, 57.6, 57.3, 57.3, 56.0, 49.0, 49.1, 40.4, 44.6, 45.7, 25.7, 30.2, 29.5, 28.2, 27.4];
+            const demPercentages = [0.65, 0.672, 0.729, 0.734, 0.671, 0.58, 0.576, 0.573, 0.573, 0.56, 0.49, 0.491, 0.404, 0.446, 0.457, 0.257, 0.302, 0.295, 0.282, 0.274]; // Decimal format!
             
             let id = 1;
             for (let row = 0; row < 4; row++) {
@@ -477,7 +443,7 @@
                     const lat = 29.0 + (row * 1.0);
                     const county = counties[id - 1];
                     const demPct = demPercentages[id - 1];
-                    const dem = Math.round(500 + demPct * 10);
+                    const dem = Math.round(500 + demPct * 1000);
                     const rep = Math.round(1000 - dem);
                     
                     const coordinates = [[
@@ -496,12 +462,12 @@
                             "Dem": dem,
                             "Rep": rep,
                             "Total": dem + rep,
-                            "Dem_pct": demPct,
-                            "Rep_pct": (rep / (dem + rep) * 100),
-                            "White_Vap_pct": 50 + Math.random() * 30,
-                            "Black_Vap_pct": Math.random() * 25,
-                            "Asian_Vap_pct": Math.random() * 15,
-                            "Hispanic_Vap_pct": Math.random() * 35,
+                            "Dem_pct": demPct,  // Decimal format: 0.65 = 65%
+                            "Rep_pct": (1 - demPct), // Complement as decimal
+                            "White_Vap_pct": 0.5 + Math.random() * 0.3,  // Decimal format
+                            "Black_Vap_pct": Math.random() * 0.25,
+                            "Asian_Vap_pct": Math.random() * 0.15,
+                            "Hispanic_Vap_pct": Math.random() * 0.35,
                             "vap": Math.round((dem + rep) * 1.2),
                             "anglovap": Math.round((dem + rep) * 0.6),
                             "blackvap": Math.round((dem + rep) * 0.15),
@@ -513,11 +479,13 @@
                             "coordinates": coordinates
                         }
                     });
+                    
+                    console.log(`Created ${county}: Dem_pct=${demPct} (${(demPct*100).toFixed(1)}%)`);
                     id++;
                 }
             }
             
-            console.log('✅ Created', features.length, 'dummy features');
+            console.log('✅ Created', features.length, 'dummy features with decimal percentages');
             processGeoJSON({"type": "FeatureCollection", "features": features});
         }
 
@@ -550,17 +518,17 @@
             });
         }
 
-        // Apply filters
+        // Apply filters - handle decimal percentages
         function applyFilters() {
             if (!originalData) return;
             
             const filters = {
-                dem: parseInt(document.getElementById('demSlider').value),
-                rep: parseInt(document.getElementById('repSlider').value),
-                white: parseInt(document.getElementById('whiteSlider').value),
-                black: parseInt(document.getElementById('blackSlider').value),
-                hispanic: parseInt(document.getElementById('hispanicSlider').value),
-                asian: parseInt(document.getElementById('asianSlider').value)
+                dem: parseInt(document.getElementById('demSlider').value) / 100, // Convert to decimal
+                rep: parseInt(document.getElementById('repSlider').value) / 100,
+                white: parseInt(document.getElementById('whiteSlider').value) / 100,
+                black: parseInt(document.getElementById('blackSlider').value) / 100,
+                hispanic: parseInt(document.getElementById('hispanicSlider').value) / 100,
+                asian: parseInt(document.getElementById('asianSlider').value) / 100
             };
             
             const filteredData = {
@@ -581,14 +549,16 @@
             updateSummary();
         }
 
-        // Color coding
+        // Color coding - handle decimal percentages (0.65 = 65%)
         function getColor(demPct) {
-            const pct = parseFloat(demPct) || 0;
-            if (pct < 20) return '#8b0000';
-            if (pct < 40) return '#dc143c';
-            if (pct < 49) return '#ff6b6b';
-            if (pct < 60) return '#4dabf7';
-            return '#1864ab';
+            const pct = (parseFloat(demPct) || 0) * 100; // Convert decimal to percentage
+            console.log('Coloring polygon with Dem_pct:', demPct, '→', pct + '%');
+            
+            if (pct < 20) return '#8b0000';      // Dark red
+            if (pct < 40) return '#dc143c';      // Medium red
+            if (pct < 49) return '#ff6b6b';      // Light red
+            if (pct < 60) return '#4dabf7';      // Light blue
+            return '#1864ab';                    // Dark blue
         }
 
         // Style polygons
@@ -623,7 +593,7 @@
                 style: style,
                 onEachFeature: function(feature, layer) {
                     const props = feature.properties;
-                    const demPct = parseFloat(props.Dem_pct) || 0;
+                    const demPct = (parseFloat(props.Dem_pct) || 0) * 100; // Convert to percentage for display
                     
                     layer.bindTooltip(`
                         <strong>County:</strong> ${props.County || 'N/A'}<br>
@@ -632,9 +602,7 @@
                     `);
 
                     layer.on('click', function(e) {
-                        if (!isRectangleMode) {
-                            toggleFeatureSelection(feature, layer);
-                        }
+                        toggleFeatureSelection(feature, layer);
                         L.DomEvent.stopPropagation(e);
                     });
                 }
@@ -643,15 +611,16 @@
             map.fitBounds(geoJsonLayer.getBounds(), {padding: [20, 20]});
         }
 
-        // Select features in rectangle
-        function selectFeaturesInRectangle(bounds) {
+        // Select features in drawn area
+        function selectFeaturesInDrawnArea(drawnLayer) {
+            console.log('🎯 Selecting features in drawn area...');
             selectedFeatures = [];
             
             if (!geoJsonLayer) return;
 
             geoJsonLayer.eachLayer(function(layer) {
                 const feature = layer.feature;
-                if (isFeatureInBounds(feature, bounds)) {
+                if (isFeatureInDrawnArea(feature, drawnLayer)) {
                     selectedFeatures.push({feature: feature, layer: layer});
                     layer.setStyle(highlightStyle(feature));
                 } else {
@@ -659,22 +628,26 @@
                 }
             });
             
+            console.log(`Selected ${selectedFeatures.length} features`);
             updateSummary();
         }
 
-        // Check if feature is in bounds
-        function isFeatureInBounds(feature, bounds) {
+        // Check if feature intersects with drawn area
+        function isFeatureInDrawnArea(feature, drawnLayer) {
             if (!feature.geometry || !feature.geometry.coordinates) return false;
             
             try {
+                const drawnBounds = drawnLayer.getBounds();
+                
                 if (feature.geometry.type === 'Polygon') {
                     const coords = feature.geometry.coordinates[0];
                     return coords.some(coord => {
-                        return bounds.contains([coord[1], coord[0]]);
+                        return drawnBounds.contains([coord[1], coord[0]]);
                     });
                 }
                 return false;
             } catch (e) {
+                console.error('Error in intersection check:', e);
                 return false;
             }
         }
@@ -720,9 +693,13 @@
             </div>`;
             
             Object.entries(aggregated).forEach(([key, value]) => {
-                const displayValue = key.includes('_pct') || key.includes('_Pct') ? 
-                    `${value.toFixed(1)}%` : 
-                    value.toLocaleString();
+                let displayValue;
+                if (key.includes('_pct') || key.includes('_Pct')) {
+                    // Convert decimal percentages to display format
+                    displayValue = `${(value * 100).toFixed(1)}%`;
+                } else {
+                    displayValue = value.toLocaleString();
+                }
                 
                 html += `<div class="summary-item">
                     <span class="summary-label">${formatLabel(key)}:</span>
