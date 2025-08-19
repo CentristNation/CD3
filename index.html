@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposed CD 3 Data Analytics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .main-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin: 5px 0 0 0;
+        }
+        
+        .loading-message {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .filters {
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .party-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .party-filter {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .party-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 8px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dem-icon {
+            color: #0066cc;
+        }
+        
+        .rep-icon {
+            color: #cc0000;
+        }
+        
+        .range-input {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .range-value {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .summary {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .summary h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .summary-label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .summary-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+        
+        .instruction {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+            border-left: 4px solid #007bff;
+        }
+        
+        .credit {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            z-index: 1000;
+        }
+        
+        .selection-tools {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .tool-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .tool-button:hover {
+            background: #0056b3;
+        }
+        
+        .tool-button.active {
+            background: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="header">
+                <h1 class="main-title">Proposed CD 3 Data Analytics</h1>
+                <p class="subtitle">By Ifte Islam PhD</p>
+            </div>
+            
+            <div class="loading-message" id="loadingMessage">
+                🔄 Loading GeoJSON data...
+            </div>
+            
+            <div class="instruction" id="instructionPanel" style="display: none;">
+                💡 Use the selection tools below or click polygons to select areas and view aggregated data.
+            </div>
+            
+            <div class="selection-tools" id="selectionTools" style="display: none;">
+                <div style="font-weight: bold; margin-bottom: 5px;">🎯 Selection Tools</div>
+                <button class="tool-button" id="selectPolygon">📐 Polygon</button>
+                <button class="tool-button" id="selectRectangle">⬜ Rectangle</button>
+                <button class="tool-button" id="selectCircle">⭕ Circle</button>
+                <button class="tool-button" id="clearSelection">🗑️ Clear</button>
+            </div>
+            
+            <div class="filters" id="filtersPanel" style="display: none;">
+                <div class="filter-group">
+                    <div class="filter-title">🎯 Party Filters</div>
+                    <div class="party-filters">
+                        <div class="party-filter">
+                            <div class="party-icon dem-icon">🐴</div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 12px; font-weight: bold;">Democratic %</div>
+                                <input type="range" class="range-input" id="demRange" min="0" max="100" value="0">
+                                <div class="range-value" id="demValue">Min: 0%</div>
+                            </div>
+                        </div>
+                        <div class="party-filter">
+                            <div class="party-icon rep-icon">🐘</div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 12px; font-weight: bold;">Republican %</div>
+                                <input type="range" class="range-input" id="repRange" min="0" max="100" value="0">
+                                <div class="range-value" id="repValue">Min: 0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <div class="filter-title">👥 Demographics</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold;">White %</label>
+                            <input type="range" class="range-input" id="whiteRange" min="0" max="100" value="0">
+                            <div class="range-value" id="whiteValue">Min: 0%</div>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold;">Black %</label>
+                            <input type="range" class="range-input" id="blackRange" min="0" max="100" value="0">
+                            <div class="range-value" id="blackValue">Min: 0%</div>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold;">Hispanic %</label>
+                            <input type="range" class="range-input" id="hispanicRange" min="0" max="100" value="0">
+                            <div class="range-value" id="hispanicValue">Min: 0%</div>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold;">Asian %</label>
+                            <input type="range" class="range-input" id="asianRange" min="0" max="100" value="0">
+                            <div class="range-value" id="asianValue">Min: 0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="summary" id="summary" style="display: none;">
+                <h3>📊 Selected Area Summary</h3>
+                <div id="summaryContent">
+                    <p style="color: #666; text-align: center;">Select areas on the map to view aggregated data</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="legend" id="legend" style="display: none;">
+                <h4>Democratic %</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #b30000;"></div>
+                    <span>0-20%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff4d4d;"></div>
+                    <span>20-40%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff9999;"></div>
+                    <span>40-49%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #6699ff;"></div>
+                    <span>50-60%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #0066cc;"></div>
+                    <span>60%+</span>
+                </div>
+            </div>
+            <div class="credit">PrecinctSmart.com</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.min.js"></script>
+    <script>
+        let map, geoJsonLayer, drawnItems, selectedFeatures = [];
+        let originalData = null;
+        let dataRanges = {};
+        let currentDrawTool = null;
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([39.8283, -98.5795], 4);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Initialize drawing layer
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            // Load GeoJSON automatically
+            loadGeoJSONFromFile();
+        }
+
+        // Auto-load GeoJSON from same directory
+        async function loadGeoJSONFromFile() {
+            try {
+                const response = await fetch('prop3.geojson');
+                if (response.ok) {
+                    const geojson = await response.json();
+                    originalData = geojson;
+                    calculateDataRanges(geojson);
+                    setupFilters();
+                    loadGeoJSON(geojson);
+                    showInterface();
+                } else {
+                    document.getElementById('loadingMessage').innerHTML = 
+                        '❌ Could not find prop3.geojson file. Please ensure your GeoJSON file is named prop3.geojson in the same directory.';
+                }
+            } catch (error) {
+                document.getElementById('loadingMessage').innerHTML = 
+                    '❌ Error loading prop3.geojson: ' + error.message;
+            }
+        }
+
+        // Calculate min/max ranges for filters
+        function calculateDataRanges(geojson) {
+            dataRanges = {
+                dem: { min: 100, max: 0 },
+                rep: { min: 100, max: 0 },
+                white: { min: 100, max: 0 },
+                black: { min: 100, max: 0 },
+                hispanic: { min: 100, max: 0 },
+                asian: { min: 100, max: 0 }
+            };
+
+            geojson.features.forEach(feature => {
+                const props = feature.properties;
+                
+                // Update ranges
+                const demPct = props.Dem_pct || 0;
+                const repPct = props.Rep_pct || 0;
+                const whitePct = props.White_Vap_pct || 0;
+                const blackPct = props.Black_Vap_pct || 0;
+                const hispanicPct = props.Hispanic_Vap_pct || 0;
+                const asianPct = props.Asian_Vap_pct || 0;
+
+                dataRanges.dem.min = Math.min(dataRanges.dem.min, demPct);
+                dataRanges.dem.max = Math.max(dataRanges.dem.max, demPct);
+                dataRanges.rep.min = Math.min(dataRanges.rep.min, repPct);
+                dataRanges.rep.max = Math.max(dataRanges.rep.max, repPct);
+                dataRanges.white.min = Math.min(dataRanges.white.min, whitePct);
+                dataRanges.white.max = Math.max(dataRanges.white.max, whitePct);
+                dataRanges.black.min = Math.min(dataRanges.black.min, blackPct);
+                dataRanges.black.max = Math.max(dataRanges.black.max, blackPct);
+                dataRanges.hispanic.min = Math.min(dataRanges.hispanic.min, hispanicPct);
+                dataRanges.hispanic.max = Math.max(dataRanges.hispanic.max, hispanicPct);
+                dataRanges.asian.min = Math.min(dataRanges.asian.min, asianPct);
+                dataRanges.asian.max = Math.max(dataRanges.asian.max, asianPct);
+            });
+        }
+
+        // Show interface after loading
+        function showInterface() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('instructionPanel').style.display = 'block';
+            document.getElementById('selectionTools').style.display = 'block';
+            document.getElementById('filtersPanel').style.display = 'block';
+            document.getElementById('summary').style.display = 'block';
+            document.getElementById('legend').style.display = 'block';
+        }
+
+        // Color coding function based on Dem_pct
+        function getColor(demPct) {
+            if (demPct < 20) return '#b30000';      // Dark red
+            if (demPct < 40) return '#ff4d4d';      // Medium red
+            if (demPct < 49) return '#ff9999';      // Light red
+            if (demPct < 60) return '#6699ff';      // Light blue
+            return '#0066cc';                       // Dark blue
+        }
+
+        // Style function for polygons
+        function style(feature) {
+            const demPct = feature.properties.Dem_pct || 0;
+            return {
+                fillColor: getColor(demPct),
+                weight: 1,
+                opacity: 0.8,
+                color: 'white',
+                fillOpacity: 0.7
+            };
+        }
+
+        // Highlight style
+        function highlightStyle(feature) {
+            const demPct = feature.properties.Dem_pct || 0;
+            return {
+                fillColor: getColor(demPct),
+                weight: 3,
+                color: '#666',
+                fillOpacity: 0.9
+            };
+        }
+
+        // Load GeoJSON onto map
+        function loadGeoJSON(geojson) {
+            if (geoJsonLayer) {
+                map.removeLayer(geoJsonLayer);
+            }
+
+            geoJsonLayer = L.geoJSON(geojson, {
+                style: style,
+                onEachFeature: function(feature, layer) {
+                    // Hover tooltip
+                    const props = feature.properties;
+                    const tooltipContent = `
+                        <strong>County:</strong> ${props.County || 'N/A'}<br>
+                        <strong>VTD:</strong> ${props.VTD || 'N/A'}<br>
+                        <strong>Dem %:</strong> ${(props.Dem_pct || 0).toFixed(1)}%
+                    `;
+                    layer.bindTooltip(tooltipContent);
+
+                    // Click to select individual polygons
+                    layer.on('click', function() {
+                        toggleFeatureSelection(feature, layer);
+                    });
+                }
+            }).addTo(map);
+
+            map.fitBounds(geoJsonLayer.getBounds());
+        }
+
+        // Setup selection tools
+        function setupSelectionTools() {
+            document.getElementById('selectPolygon').addEventListener('click', function() {
+                activateDrawTool('polygon');
+                setActiveButton(this);
+            });
+
+            document.getElementById('selectRectangle').addEventListener('click', function() {
+                activateDrawTool('rectangle');
+                setActiveButton(this);
+            });
+
+            document.getElementById('selectCircle').addEventListener('click', function() {
+                activateDrawTool('circle');
+                setActiveButton(this);
+            });
+
+            document.getElementById('clearSelection').addEventListener('click', function() {
+                clearAllSelections();
+                clearActiveButton();
+            });
+        }
+
+        // Activate drawing tool
+        function activateDrawTool(tool) {
+            if (currentDrawTool) {
+                currentDrawTool.disable();
+            }
+
+            switch(tool) {
+                case 'polygon':
+                    currentDrawTool = new L.Draw.Polygon(map);
+                    break;
+                case 'rectangle':
+                    currentDrawTool = new L.Draw.Rectangle(map);
+                    break;
+                case 'circle':
+                    currentDrawTool = new L.Draw.Circle(map);
+                    break;
+            }
+
+            if (currentDrawTool) {
+                currentDrawTool.enable();
+            }
+        }
+
+        // Set active button style
+        function setActiveButton(button) {
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        }
+
+        // Clear active button
+        function clearActiveButton() {
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+        }
+
+        // Handle drawing events
+        function setupDrawingEvents() {
+            map.on(L.Draw.Event.CREATED, function(e) {
+                const layer = e.layer;
+                drawnItems.addLayer(layer);
+                selectFeaturesInDrawnArea(layer);
+                if (currentDrawTool) {
+                    currentDrawTool.disable();
+                    currentDrawTool = null;
+                }
+                clearActiveButton();
+            });
+        }
+
+        // Toggle individual feature selection
+        function toggleFeatureSelection(feature, layer) {
+            const index = selectedFeatures.findIndex(f => f.feature === feature);
+            
+            if (index > -1) {
+                selectedFeatures.splice(index, 1);
+                layer.setStyle(style(feature));
+            } else {
+                selectedFeatures.push({feature: feature, layer: layer});
+                layer.setStyle(highlightStyle(feature));
+            }
+            
+            updateSummary();
+        }
+
+        // Select features within drawn area
+        function selectFeaturesInDrawnArea(drawnLayer) {
+            selectedFeatures = [];
+            
+            geoJsonLayer.eachLayer(function(layer) {
+                const feature = layer.feature;
+                if (isFeatureInDrawnArea(feature, drawnLayer)) {
+                    selectedFeatures.push({feature: feature, layer: layer});
+                    layer.setStyle(highlightStyle(feature));
+                } else {
+                    layer.setStyle(style(feature));
+                }
+            });
+            
+            updateSummary();
+        }
+
+        // Check if feature intersects with drawn area
+        function isFeatureInDrawnArea(feature, drawnLayer) {
+            if (!feature.geometry || !feature.geometry.coordinates) return false;
+            
+            try {
+                const featureLayer = L.geoJSON(feature);
+                const drawnBounds = drawnLayer.getBounds();
+                const featureBounds = featureLayer.getBounds();
+                
+                // Check if bounds intersect
+                return drawnBounds.intersects(featureBounds);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Clear all selections
+        function clearAllSelections() {
+            selectedFeatures = [];
+            drawnItems.clearLayers();
+            if (currentDrawTool) {
+                currentDrawTool.disable();
+                currentDrawTool = null;
+            }
+            resetHighlight();
+            updateSummary();
+        }
+
+        // Reset highlight
+        function resetHighlight() {
+            if (geoJsonLayer) {
+                geoJsonLayer.eachLayer(function(layer) {
+                    layer.setStyle(style(layer.feature));
+                });
+            }
+        }
+
+        // Update summary with aggregated data
+        function updateSummary() {
+            const summaryContent = document.getElementById('summaryContent');
+            
+            if (selectedFeatures.length === 0) {
+                summaryContent.innerHTML = '<p style="color: #666; text-align: center;">Select areas on the map to view aggregated data</p>';
+                return;
+            }
+
+            const aggregated = aggregateData(selectedFeatures.map(sf => sf.feature.properties));
+            
+            let html = `<div class="summary-item">
+                <span class="summary-label">Selected Areas:</span>
+                <span class="summary-value">${selectedFeatures.length}</span>
+            </div>`;
+            
+            Object.entries(aggregated).forEach(([key, value]) => {
+                const displayValue = key.includes('_pct') || key.includes('_Pct') ? 
+                    `${value.toFixed(1)}%` : 
+                    value.toLocaleString();
+                
+                html += `<div class="summary-item">
+                    <span class="summary-label">${formatLabel(key)}:</span>
+                    <span class="summary-value">${displayValue}</span>
+                </div>`;
+            });
+            
+            summaryContent.innerHTML = html;
+        }
+
+        // Aggregate data according to rules
+        function aggregateData(propertiesArray) {
+            if (propertiesArray.length === 0) return {};
+            
+            const result = {};
+            const sampleProps = propertiesArray[0];
+            
+            Object.keys(sampleProps).forEach(key => {
+                if (key === 'geometry' || key === 'GEOID' || key === 'PCTKEY') return;
+                
+                const values = propertiesArray.map(p => parseFloat(p[key]) || 0).filter(v => !isNaN(v));
+                if (values.length === 0) return;
+                
+                if (key.includes('_pct') || key.includes('_Pct')) {
+                    // Average for percentage columns
+                    result[key] = values.reduce((sum, val) => sum + val, 0) / values.length;
+                } else if (['Dem', 'Rep', 'Total'].includes(key) || key.endsWith('vap')) {
+                    // Sum for vote counts and VAP columns
+                    result[key] = values.reduce((sum, val) => sum + val, 0);
+                }
+            });
+            
+            return result;
+        }
+
+        // Format label for display
+        function formatLabel(key) {
+            return key.replace(/_/g, ' ')
+                     .replace(/pct/gi, '%')
+                     .replace(/vap/gi, 'VAP')
+                     .replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Setup filters with dynamic ranges
+        function setupFilters() {
+            const filterConfigs = [
+                { id: 'dem', label: 'Democratic', key: 'Dem_pct' },
+                { id: 'rep', label: 'Republican', key: 'Rep_pct' },
+                { id: 'white', label: 'White', key: 'White_Vap_pct' },
+                { id: 'black', label: 'Black', key: 'Black_Vap_pct' },
+                { id: 'hispanic', label: 'Hispanic', key: 'Hispanic_Vap_pct' },
+                { id: 'asian', label: 'Asian', key: 'Asian_Vap_pct' }
+            ];
+
+            filterConfigs.forEach(config => {
+                const range = document.getElementById(config.id + 'Range');
+                const value = document.getElementById(config.id + 'Value');
+                const dataRange = dataRanges[config.id];
+                
+                if (range && dataRange) {
+                    range.min = Math.floor(dataRange.min);
+                    range.max = Math.ceil(dataRange.max);
+                    range.value = Math.floor(dataRange.min);
+                    
+                    value.textContent = `Range: ${Math.floor(dataRange.min)}% - ${Math.ceil(dataRange.max)}%`;
+                    
+                    range.addEventListener('input', function() {
+                        value.textContent = `Min: ${this.value}% (Max: ${Math.ceil(dataRange.max)}%)`;
+                        applyFilters();
+                    });
+                }
+            });
+        }
+
+        // Apply filters to map
+        function applyFilters() {
+            if (!originalData) return;
+            
+            const filters = {
+                dem: parseFloat(document.getElementById('demRange').value),
+                rep: parseFloat(document.getElementById('repRange').value),
+                white: parseFloat(document.getElementById('whiteRange').value),
+                black: parseFloat(document.getElementById('blackRange').value),
+                hispanic: parseFloat(document.getElementById('hispanicRange').value),
+                asian: parseFloat(document.getElementById('asianRange').value)
+            };
+            
+            const filteredData = {
+                ...originalData,
+                features: originalData.features.filter(feature => {
+                    const props = feature.properties;
+                    return (props.Dem_pct || 0) >= filters.dem &&
+                           (props.Rep_pct || 0) >= filters.rep &&
+                           (props.White_Vap_pct || 0) >= filters.white &&
+                           (props.Black_Vap_pct || 0) >= filters.black &&
+                           (props.Hispanic_Vap_pct || 0) >= filters.hispanic &&
+                           (props.Asian_Vap_pct || 0) >= filters.asian;
+                })
+            };
+            
+            loadGeoJSON(filteredData);
+            selectedFeatures = [];
+            updateSummary();
+        }
+
+        // Initialize everything
+        initMap();
+        setupSelectionTools();
+        setupDrawingEvents();
+    </script>
+</body>
+</html>
