@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proposed CD 3 Data Analytics</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
     <style>
         body {
             margin: 0;
@@ -20,11 +19,11 @@
         }
         
         .sidebar {
-            width: 350px;
+            width: 300px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-right: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
@@ -41,143 +40,117 @@
         
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
             border-bottom: 2px solid #007bff;
         }
         
         .main-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #333;
             margin: 0;
+            line-height: 1.3;
         }
         
         .subtitle {
-            font-size: 14px;
+            font-size: 13px;
             color: #666;
-            margin: 5px 0 0 0;
+            margin: 3px 0 0 0;
         }
         
-        .loading-message {
+        .status-message {
             background: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 10px;
+            padding: 10px;
+            border-radius: 8px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            font-size: 13px;
             border-left: 4px solid #007bff;
         }
         
-        .filters {
-            margin-bottom: 20px;
-        }
-        
-        .filter-group {
+        .section {
             background: rgba(255, 255, 255, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
-        .filter-title {
+        .section-title {
             font-weight: bold;
             margin-bottom: 10px;
             color: #333;
+            font-size: 14px;
         }
         
-        .party-filters {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
+        .selection-tools {
+            text-align: center;
         }
         
-        .party-filter {
-            flex: 1;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        .tool-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 3px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
         }
         
-        .party-header {
+        .tool-button:hover {
+            background: #0056b3;
+        }
+        
+        .tool-button.active {
+            background: #28a745;
+        }
+        
+        .filter-item {
+            margin-bottom: 12px;
+        }
+        
+        .filter-label {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: bold;
         }
         
         .party-icon {
-            width: 25px;
-            height: 25px;
-            margin-right: 8px;
-            font-size: 18px;
+            width: 20px;
+            height: 20px;
+            margin-right: 6px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        .dem-icon {
-            color: #0066cc;
+        .dem-icon { color: #0066cc; }
+        .rep-icon { color: #cc0000; }
+        
+        .filter-slider {
+            width: 100%;
+            margin: 3px 0;
         }
         
-        .rep-icon {
-            color: #cc0000;
-        }
-        
-        .range-container {
-            margin: 10px 0;
-        }
-        
-        .range-inputs {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        
-        .range-input {
-            flex: 1;
-        }
-        
-        .range-value {
+        .filter-value {
             font-size: 11px;
             color: #666;
-            margin-top: 4px;
-        }
-        
-        .demo-filter {
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .demo-label {
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .summary {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .summary h3 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
+            text-align: center;
         }
         
         .summary-item {
             display: flex;
             justify-content: space-between;
-            margin: 8px 0;
-            padding: 5px 0;
+            margin: 6px 0;
+            padding: 3px 0;
             border-bottom: 1px solid #eee;
+            font-size: 12px;
         }
         
         .summary-label {
@@ -195,38 +168,30 @@
             bottom: 60px;
             right: 20px;
             background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             z-index: 1000;
+            font-size: 12px;
         }
         
         .legend h4 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             color: #333;
+            font-size: 13px;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 5px 0;
+            margin: 4px 0;
         }
         
         .legend-color {
-            width: 20px;
-            height: 15px;
-            margin-right: 8px;
+            width: 18px;
+            height: 12px;
+            margin-right: 6px;
             border: 1px solid #ccc;
-        }
-        
-        .instruction {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            color: #666;
-            border-left: 4px solid #007bff;
         }
         
         .credit {
@@ -234,21 +199,18 @@
             bottom: 10px;
             right: 20px;
             background: rgba(255, 255, 255, 0.9);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 11px;
             color: #666;
             z-index: 1000;
         }
         
-        .debug-info {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: #333;
-            border-left: 4px solid #28a745;
+        .mode-info {
+            font-size: 10px;
+            margin-top: 5px;
+            color: #666;
+            text-align: center;
         }
     </style>
 </head>
@@ -260,108 +222,76 @@
                 <p class="subtitle">By Ifte Islam PhD</p>
             </div>
             
-            <div class="loading-message" id="loadingMessage">
-                🔄 Loading prop3.geojson...
+            <div class="status-message" id="statusMessage">
+                🔄 Loading data...
             </div>
             
-            <div class="debug-info" id="debugInfo" style="display: none;">
-                <strong>Debug Info:</strong><br>
-                <span id="debugContent"></span>
+            <div class="section" id="selectionSection">
+                <div class="section-title">🎯 Selection Tools</div>
+                <div class="selection-tools">
+                    <button class="tool-button" id="selectRect" onclick="toggleRectangleMode()">⬜ Rectangle</button>
+                    <button class="tool-button" id="clearSelection" onclick="clearAllSelections()">🗑️ Clear</button>
+                    <div class="mode-info" id="modeInfo"></div>
+                </div>
             </div>
             
-            <div class="instruction" id="instructionPanel" style="display: none;">
-                💡 Use the drawing tools on the map or click individual polygons to select areas and view aggregated data.
-            </div>
-            
-            <div class="filters" id="filtersPanel" style="display: none;">
-                <div class="filter-group">
-                    <div class="filter-title">🎯 Party Filters</div>
-                    <div class="party-filters">
-                        <div class="party-filter">
-                            <div class="party-header">
-                                <div class="party-icon dem-icon">🐴</div>
-                                <div style="font-size: 12px; font-weight: bold;">Democratic %</div>
-                            </div>
-                            <div class="range-container">
-                                <div class="range-inputs">
-                                    <input type="range" class="range-input" id="demMinRange" min="0" max="100" value="0">
-                                    <span style="font-size: 10px;">to</span>
-                                    <input type="range" class="range-input" id="demMaxRange" min="0" max="100" value="100">
-                                </div>
-                                <div class="range-value" id="demValue">Range: 0% - 100%</div>
-                            </div>
-                        </div>
-                        <div class="party-filter">
-                            <div class="party-header">
-                                <div class="party-icon rep-icon">🐘</div>
-                                <div style="font-size: 12px; font-weight: bold;">Republican %</div>
-                            </div>
-                            <div class="range-container">
-                                <div class="range-inputs">
-                                    <input type="range" class="range-input" id="repMinRange" min="0" max="100" value="0">
-                                    <span style="font-size: 10px;">to</span>
-                                    <input type="range" class="range-input" id="repMaxRange" min="0" max="100" value="100">
-                                </div>
-                                <div class="range-value" id="repValue">Range: 0% - 100%</div>
-                            </div>
-                        </div>
+            <div class="section" id="filterSection">
+                <div class="section-title">🎯 Filters (Min %)</div>
+                
+                <div class="filter-item">
+                    <div class="filter-label">
+                        <div class="party-icon dem-icon">🐴</div>
+                        Democratic %
                     </div>
+                    <input type="range" class="filter-slider" id="demSlider" min="0" max="100" value="0">
+                    <div class="filter-value" id="demValue">Show areas ≥ 0%</div>
                 </div>
                 
-                <div class="filter-group">
-                    <div class="filter-title">👥 Demographics</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div class="demo-filter">
-                            <div class="demo-label">White %</div>
-                            <div class="range-inputs">
-                                <input type="range" class="range-input" id="whiteMinRange" min="0" max="100" value="0">
-                                <span style="font-size: 10px;">to</span>
-                                <input type="range" class="range-input" id="whiteMaxRange" min="0" max="100" value="100">
-                            </div>
-                            <div class="range-value" id="whiteValue">0% - 100%</div>
-                        </div>
-                        <div class="demo-filter">
-                            <div class="demo-label">Black %</div>
-                            <div class="range-inputs">
-                                <input type="range" class="range-input" id="blackMinRange" min="0" max="100" value="0">
-                                <span style="font-size: 10px;">to</span>
-                                <input type="range" class="range-input" id="blackMaxRange" min="0" max="100" value="100">
-                            </div>
-                            <div class="range-value" id="blackValue">0% - 100%</div>
-                        </div>
-                        <div class="demo-filter">
-                            <div class="demo-label">Hispanic %</div>
-                            <div class="range-inputs">
-                                <input type="range" class="range-input" id="hispanicMinRange" min="0" max="100" value="0">
-                                <span style="font-size: 10px;">to</span>
-                                <input type="range" class="range-input" id="hispanicMaxRange" min="0" max="100" value="100">
-                            </div>
-                            <div class="range-value" id="hispanicValue">0% - 100%</div>
-                        </div>
-                        <div class="demo-filter">
-                            <div class="demo-label">Asian %</div>
-                            <div class="range-inputs">
-                                <input type="range" class="range-input" id="asianMinRange" min="0" max="100" value="0">
-                                <span style="font-size: 10px;">to</span>
-                                <input type="range" class="range-input" id="asianMaxRange" min="0" max="100" value="100">
-                            </div>
-                            <div class="range-value" id="asianValue">0% - 100%</div>
-                        </div>
+                <div class="filter-item">
+                    <div class="filter-label">
+                        <div class="party-icon rep-icon">🐘</div>
+                        Republican %
                     </div>
+                    <input type="range" class="filter-slider" id="repSlider" min="0" max="100" value="0">
+                    <div class="filter-value" id="repValue">Show areas ≥ 0%</div>
+                </div>
+                
+                <div class="filter-item">
+                    <div class="filter-label">White %</div>
+                    <input type="range" class="filter-slider" id="whiteSlider" min="0" max="100" value="0">
+                    <div class="filter-value" id="whiteValue">Show areas ≥ 0%</div>
+                </div>
+                
+                <div class="filter-item">
+                    <div class="filter-label">Black %</div>
+                    <input type="range" class="filter-slider" id="blackSlider" min="0" max="100" value="0">
+                    <div class="filter-value" id="blackValue">Show areas ≥ 0%</div>
+                </div>
+                
+                <div class="filter-item">
+                    <div class="filter-label">Hispanic %</div>
+                    <input type="range" class="filter-slider" id="hispanicSlider" min="0" max="100" value="0">
+                    <div class="filter-value" id="hispanicValue">Show areas ≥ 0%</div>
+                </div>
+                
+                <div class="filter-item">
+                    <div class="filter-label">Asian %</div>
+                    <input type="range" class="filter-slider" id="asianSlider" min="0" max="100" value="0">
+                    <div class="filter-value" id="asianValue">Show areas ≥ 0%</div>
                 </div>
             </div>
             
-            <div class="summary" id="summary" style="display: none;">
-                <h3>📊 Selected Area Summary</h3>
+            <div class="section" id="summarySection">
+                <div class="section-title">📊 Selected Area Summary</div>
                 <div id="summaryContent">
-                    <p style="color: #666; text-align: center;">Select areas on the map to view aggregated data</p>
+                    <p style="color: #666; text-align: center; font-size: 12px;">Select areas to view data</p>
                 </div>
             </div>
         </div>
         
         <div class="map-container">
             <div id="map"></div>
-            <div class="legend" id="legend" style="display: none;">
+            <div class="legend" id="legend">
                 <h4>Democratic %</h4>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #8b0000;"></div>
@@ -389,216 +319,283 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.min.js"></script>
     <script>
         let map, geoJsonLayer, selectedFeatures = [];
         let originalData = null;
-        let dataRanges = {};
-        let drawControl = null;
-        let drawnItems = null;
+        let isRectangleMode = false;
+        let rectangleStartPoint = null;
+        let currentRectangle = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Starting application...');
+            initMap();
+        });
 
         // Initialize map
         function initMap() {
-            map = L.map('map').setView([39.8283, -98.5795], 4);
+            console.log('🗺️ Initializing map...');
+            
+            map = L.map('map').setView([32.0, -97.0], 6);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            // Initialize drawn items layer
-            drawnItems = new L.FeatureGroup();
-            map.addLayer(drawnItems);
-
-            // Load GeoJSON automatically
+            setupRectangleSelection();
             loadGeoJSONFromFile();
+            
+            console.log('✅ Map initialized');
         }
 
-        // Auto-load GeoJSON from same directory
+        // Setup rectangle selection
+        function setupRectangleSelection() {
+            map.on('mousedown', function(e) {
+                if (isRectangleMode) {
+                    rectangleStartPoint = e.latlng;
+                    if (currentRectangle) {
+                        map.removeLayer(currentRectangle);
+                    }
+                }
+            });
+
+            map.on('mousemove', function(e) {
+                if (isRectangleMode && rectangleStartPoint) {
+                    if (currentRectangle) {
+                        map.removeLayer(currentRectangle);
+                    }
+                    
+                    const bounds = L.latLngBounds(rectangleStartPoint, e.latlng);
+                    currentRectangle = L.rectangle(bounds, {
+                        color: '#ff7800',
+                        weight: 2,
+                        fillOpacity: 0.2
+                    }).addTo(map);
+                }
+            });
+
+            map.on('mouseup', function(e) {
+                if (isRectangleMode && rectangleStartPoint) {
+                    const bounds = L.latLngBounds(rectangleStartPoint, e.latlng);
+                    selectFeaturesInRectangle(bounds);
+                    rectangleStartPoint = null;
+                    
+                    if (currentRectangle) {
+                        map.removeLayer(currentRectangle);
+                        currentRectangle = null;
+                    }
+                    
+                    toggleRectangleMode(); // Exit rectangle mode
+                }
+            });
+        }
+
+        // Toggle rectangle mode
+        function toggleRectangleMode() {
+            isRectangleMode = !isRectangleMode;
+            const button = document.getElementById('selectRect');
+            const modeInfo = document.getElementById('modeInfo');
+            
+            if (isRectangleMode) {
+                button.classList.add('active');
+                button.textContent = '✋ Exit Rectangle';
+                modeInfo.textContent = 'Click and drag to select';
+                map.getContainer().style.cursor = 'crosshair';
+            } else {
+                button.classList.remove('active');
+                button.textContent = '⬜ Rectangle';
+                modeInfo.textContent = '';
+                map.getContainer().style.cursor = '';
+            }
+        }
+
+        // Clear selections
+        function clearAllSelections() {
+            selectedFeatures = [];
+            isRectangleMode = false;
+            
+            const button = document.getElementById('selectRect');
+            const modeInfo = document.getElementById('modeInfo');
+            button.classList.remove('active');
+            button.textContent = '⬜ Rectangle';
+            modeInfo.textContent = '';
+            map.getContainer().style.cursor = '';
+            
+            if (currentRectangle) {
+                map.removeLayer(currentRectangle);
+                currentRectangle = null;
+            }
+            
+            resetHighlight();
+            updateSummary();
+        }
+
+        // Load GeoJSON data
         async function loadGeoJSONFromFile() {
+            console.log('📁 Attempting to load prop3.geojson...');
+            updateStatus('🔄 Loading prop3.geojson...');
+            
             try {
                 const response = await fetch('prop3.geojson');
                 if (response.ok) {
                     const geojson = await response.json();
-                    originalData = geojson;
-                    
-                    // Debug: Check the data structure
-                    console.log('GeoJSON loaded:', geojson);
-                    if (geojson.features && geojson.features.length > 0) {
-                        console.log('Sample feature properties:', geojson.features[0].properties);
-                        const sampleDemPct = geojson.features[0].properties.Dem_pct;
-                        console.log('Sample Dem_pct value:', sampleDemPct, typeof sampleDemPct);
-                        
-                        // Show debug info
-                        showDebugInfo(geojson);
-                    }
-                    
-                    calculateDataRanges(geojson);
-                    setupFilters();
-                    loadGeoJSON(geojson);
-                    setupDrawingControls();
-                    showInterface();
-                } else {
-                    document.getElementById('loadingMessage').innerHTML = 
-                        '❌ Could not find prop3.geojson file. Please ensure your GeoJSON file is named prop3.geojson in the same directory.';
+                    console.log('✅ Loaded external file');
+                    updateStatus('✅ Loaded prop3.geojson');
+                    processGeoJSON(geojson);
+                    return;
                 }
             } catch (error) {
-                document.getElementById('loadingMessage').innerHTML = 
-                    '❌ Error loading prop3.geojson: ' + error.message;
-                console.error('Error loading GeoJSON:', error);
+                console.log('⚠️ External file not found, using dummy data');
+            }
+            
+            updateStatus('🧪 Using dummy data for testing');
+            setTimeout(() => useDummyData(), 500);
+        }
+
+        // Update status message
+        function updateStatus(message) {
+            const statusEl = document.getElementById('statusMessage');
+            if (statusEl) {
+                statusEl.innerHTML = message;
             }
         }
 
-        // Show debug information
-        function showDebugInfo(geojson) {
-            const debugEl = document.getElementById('debugInfo');
-            const debugContent = document.getElementById('debugContent');
+        // Create dummy data
+        function useDummyData() {
+            console.log('🧪 Creating dummy data...');
             
-            const totalFeatures = geojson.features.length;
-            const sampleProps = geojson.features[0].properties;
-            const demPctValues = geojson.features.slice(0, 5).map(f => f.properties.Dem_pct);
+            const features = [];
+            const counties = ["Jefferson", "Harris", "Dallas", "Travis", "Bexar", "Williamson", "Collin", "Fort Bend", "Denton", "Hays", "Brazoria", "Galveston", "Montgomery", "Tarrant", "Bell", "Parker", "Ellis", "Johnson", "Kaufman", "Henderson"];
+            const demPercentages = [65.0, 67.2, 72.9, 73.4, 67.1, 58.0, 57.6, 57.3, 57.3, 56.0, 49.0, 49.1, 40.4, 44.6, 45.7, 25.7, 30.2, 29.5, 28.2, 27.4];
             
-            debugContent.innerHTML = `
-                Features: ${totalFeatures}<br>
-                Sample Dem_pct values: ${demPctValues.join(', ')}<br>
-                Available columns: ${Object.keys(sampleProps).join(', ')}
-            `;
-            
-            debugEl.style.display = 'block';
-        }
-
-        // Calculate min/max ranges for filters
-        function calculateDataRanges(geojson) {
-            dataRanges = {
-                dem: { min: Infinity, max: -Infinity },
-                rep: { min: Infinity, max: -Infinity },
-                white: { min: Infinity, max: -Infinity },
-                black: { min: Infinity, max: -Infinity },
-                hispanic: { min: Infinity, max: -Infinity },
-                asian: { min: Infinity, max: -Infinity }
-            };
-
-            geojson.features.forEach(feature => {
-                const props = feature.properties;
-                
-                // Parse values as numbers, handle both string and number formats
-                const demPct = parseFloat(props.Dem_pct) || 0;
-                const repPct = parseFloat(props.Rep_pct) || 0;
-                const whitePct = parseFloat(props.White_Vap_pct) || 0;
-                const blackPct = parseFloat(props.Black_Vap_pct) || 0;
-                const hispanicPct = parseFloat(props.Hispanic_Vap_pct) || 0;
-                const asianPct = parseFloat(props.Asian_Vap_pct) || 0;
-
-                // Update ranges
-                dataRanges.dem.min = Math.min(dataRanges.dem.min, demPct);
-                dataRanges.dem.max = Math.max(dataRanges.dem.max, demPct);
-                dataRanges.rep.min = Math.min(dataRanges.rep.min, repPct);
-                dataRanges.rep.max = Math.max(dataRanges.rep.max, repPct);
-                dataRanges.white.min = Math.min(dataRanges.white.min, whitePct);
-                dataRanges.white.max = Math.max(dataRanges.white.max, whitePct);
-                dataRanges.black.min = Math.min(dataRanges.black.min, blackPct);
-                dataRanges.black.max = Math.max(dataRanges.black.max, blackPct);
-                dataRanges.hispanic.min = Math.min(dataRanges.hispanic.min, hispanicPct);
-                dataRanges.hispanic.max = Math.max(dataRanges.hispanic.max, hispanicPct);
-                dataRanges.asian.min = Math.min(dataRanges.asian.min, asianPct);
-                dataRanges.asian.max = Math.max(dataRanges.asian.max, asianPct);
-            });
-
-            console.log('Data ranges calculated:', dataRanges);
-        }
-
-        // Setup drawing controls properly
-        function setupDrawingControls() {
-            // Create draw control
-            drawControl = new L.Control.Draw({
-                position: 'topleft',
-                draw: {
-                    polyline: false,
-                    polygon: {
-                        allowIntersection: false,
-                        drawError: {
-                            color: '#e1e100',
-                            message: '<strong>Oh snap!<strong> you can\'t draw that!'
+            let id = 1;
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 5; col++) {
+                    if (id > 20) break;
+                    
+                    const lng = -99.0 + (col * 1.0);
+                    const lat = 29.0 + (row * 1.0);
+                    const county = counties[id - 1];
+                    const demPct = demPercentages[id - 1];
+                    const dem = Math.round(500 + demPct * 10);
+                    const rep = Math.round(1000 - dem);
+                    
+                    const coordinates = [[
+                        [lng, lat],
+                        [lng + 1.0, lat],
+                        [lng + 1.0, lat + 1.0],
+                        [lng, lat + 1.0],
+                        [lng, lat]
+                    ]];
+                    
+                    features.push({
+                        "type": "Feature",
+                        "properties": {
+                            "County": county,
+                            "VTD": String(id).padStart(3, '0'),
+                            "Dem": dem,
+                            "Rep": rep,
+                            "Total": dem + rep,
+                            "Dem_pct": demPct,
+                            "Rep_pct": (rep / (dem + rep) * 100),
+                            "White_Vap_pct": 50 + Math.random() * 30,
+                            "Black_Vap_pct": Math.random() * 25,
+                            "Asian_Vap_pct": Math.random() * 15,
+                            "Hispanic_Vap_pct": Math.random() * 35,
+                            "vap": Math.round((dem + rep) * 1.2),
+                            "anglovap": Math.round((dem + rep) * 0.6),
+                            "blackvap": Math.round((dem + rep) * 0.15),
+                            "hispvap": Math.round((dem + rep) * 0.2),
+                            "asianvap": Math.round((dem + rep) * 0.05)
                         },
-                        shapeOptions: {
-                            color: '#bada55'
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": coordinates
                         }
-                    },
-                    circle: {
-                        shapeOptions: {
-                            color: '#662d91'
-                        }
-                    },
-                    rectangle: {
-                        shapeOptions: {
-                            color: '#662d91'
-                        }
-                    },
-                    marker: false,
-                    circlemarker: false
-                },
-                edit: {
-                    featureGroup: drawnItems,
-                    remove: true
+                    });
+                    id++;
+                }
+            }
+            
+            console.log('✅ Created', features.length, 'dummy features');
+            processGeoJSON({"type": "FeatureCollection", "features": features});
+        }
+
+        // Process GeoJSON data
+        function processGeoJSON(geojson) {
+            console.log('🔄 Processing data...');
+            originalData = geojson;
+            
+            setupFilters();
+            loadGeoJSON(geojson);
+            updateStatus('✅ Ready - ' + geojson.features.length + ' districts loaded');
+            
+            console.log('✅ Processing complete');
+        }
+
+        // Setup filter sliders
+        function setupFilters() {
+            const filters = ['dem', 'rep', 'white', 'black', 'hispanic', 'asian'];
+            
+            filters.forEach(filter => {
+                const slider = document.getElementById(filter + 'Slider');
+                const value = document.getElementById(filter + 'Value');
+                
+                if (slider && value) {
+                    slider.addEventListener('input', function() {
+                        value.textContent = `Show areas ≥ ${this.value}%`;
+                        applyFilters();
+                    });
                 }
             });
-
-            map.addControl(drawControl);
-
-            // Handle draw events
-            map.on(L.Draw.Event.CREATED, function(e) {
-                const type = e.layerType;
-                const layer = e.layer;
-                
-                console.log('Draw created:', type, layer);
-                drawnItems.addLayer(layer);
-                selectFeaturesInDrawnArea(layer);
-            });
-
-            map.on(L.Draw.Event.DELETED, function(e) {
-                console.log('Draw deleted');
-                selectedFeatures = [];
-                updateSummary();
-                resetHighlight();
-            });
-
-            map.on(L.Draw.Event.EDITED, function(e) {
-                console.log('Draw edited');
-                const layers = e.layers;
-                layers.eachLayer(function(layer) {
-                    selectFeaturesInDrawnArea(layer);
-                });
-            });
         }
 
-        // Show interface after loading
-        function showInterface() {
-            document.getElementById('loadingMessage').style.display = 'none';
-            document.getElementById('instructionPanel').style.display = 'block';
-            document.getElementById('filtersPanel').style.display = 'block';
-            document.getElementById('summary').style.display = 'block';
-            document.getElementById('legend').style.display = 'block';
+        // Apply filters
+        function applyFilters() {
+            if (!originalData) return;
+            
+            const filters = {
+                dem: parseInt(document.getElementById('demSlider').value),
+                rep: parseInt(document.getElementById('repSlider').value),
+                white: parseInt(document.getElementById('whiteSlider').value),
+                black: parseInt(document.getElementById('blackSlider').value),
+                hispanic: parseInt(document.getElementById('hispanicSlider').value),
+                asian: parseInt(document.getElementById('asianSlider').value)
+            };
+            
+            const filteredData = {
+                ...originalData,
+                features: originalData.features.filter(feature => {
+                    const props = feature.properties;
+                    return (props.Dem_pct || 0) >= filters.dem &&
+                           (props.Rep_pct || 0) >= filters.rep &&
+                           (props.White_Vap_pct || 0) >= filters.white &&
+                           (props.Black_Vap_pct || 0) >= filters.black &&
+                           (props.Hispanic_Vap_pct || 0) >= filters.hispanic &&
+                           (props.Asian_Vap_pct || 0) >= filters.asian;
+                })
+            };
+            
+            loadGeoJSON(filteredData);
+            selectedFeatures = [];
+            updateSummary();
         }
 
-        // Color coding function based on Dem_pct - more distinct colors
+        // Color coding
         function getColor(demPct) {
             const pct = parseFloat(demPct) || 0;
-            console.log('Getting color for Dem_pct:', pct);
-            
-            if (pct < 20) return '#8b0000';      // Dark red
-            if (pct < 40) return '#dc143c';      // Medium red  
-            if (pct < 49) return '#ff6b6b';      // Light red
-            if (pct < 60) return '#4dabf7';      // Light blue
-            return '#1864ab';                    // Dark blue
+            if (pct < 20) return '#8b0000';
+            if (pct < 40) return '#dc143c';
+            if (pct < 49) return '#ff6b6b';
+            if (pct < 60) return '#4dabf7';
+            return '#1864ab';
         }
 
-        // Style function for polygons
+        // Style polygons
         function style(feature) {
             const demPct = parseFloat(feature.properties.Dem_pct) || 0;
-            const color = getColor(demPct);
-            console.log('Styling feature with Dem_pct:', demPct, 'Color:', color);
-            
             return {
-                fillColor: color,
+                fillColor: getColor(demPct),
                 weight: 1,
                 opacity: 1,
                 color: 'white',
@@ -608,9 +605,8 @@
 
         // Highlight style
         function highlightStyle(feature) {
-            const demPct = parseFloat(feature.properties.Dem_pct) || 0;
             return {
-                fillColor: getColor(demPct),
+                fillColor: getColor(feature.properties.Dem_pct),
                 weight: 3,
                 color: '#ffff00',
                 fillOpacity: 0.9
@@ -626,29 +622,64 @@
             geoJsonLayer = L.geoJSON(geojson, {
                 style: style,
                 onEachFeature: function(feature, layer) {
-                    // Hover tooltip
                     const props = feature.properties;
                     const demPct = parseFloat(props.Dem_pct) || 0;
-                    const tooltipContent = `
+                    
+                    layer.bindTooltip(`
                         <strong>County:</strong> ${props.County || 'N/A'}<br>
                         <strong>VTD:</strong> ${props.VTD || 'N/A'}<br>
                         <strong>Dem %:</strong> ${demPct.toFixed(1)}%
-                    `;
-                    layer.bindTooltip(tooltipContent);
+                    `);
 
-                    // Click to select individual polygons
                     layer.on('click', function(e) {
-                        console.log('Polygon clicked:', feature.properties);
-                        toggleFeatureSelection(feature, layer);
+                        if (!isRectangleMode) {
+                            toggleFeatureSelection(feature, layer);
+                        }
                         L.DomEvent.stopPropagation(e);
                     });
                 }
             }).addTo(map);
 
-            map.fitBounds(geoJsonLayer.getBounds());
+            map.fitBounds(geoJsonLayer.getBounds(), {padding: [20, 20]});
         }
 
-        // Toggle individual feature selection
+        // Select features in rectangle
+        function selectFeaturesInRectangle(bounds) {
+            selectedFeatures = [];
+            
+            if (!geoJsonLayer) return;
+
+            geoJsonLayer.eachLayer(function(layer) {
+                const feature = layer.feature;
+                if (isFeatureInBounds(feature, bounds)) {
+                    selectedFeatures.push({feature: feature, layer: layer});
+                    layer.setStyle(highlightStyle(feature));
+                } else {
+                    layer.setStyle(style(feature));
+                }
+            });
+            
+            updateSummary();
+        }
+
+        // Check if feature is in bounds
+        function isFeatureInBounds(feature, bounds) {
+            if (!feature.geometry || !feature.geometry.coordinates) return false;
+            
+            try {
+                if (feature.geometry.type === 'Polygon') {
+                    const coords = feature.geometry.coordinates[0];
+                    return coords.some(coord => {
+                        return bounds.contains([coord[1], coord[0]]);
+                    });
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Toggle feature selection
         function toggleFeatureSelection(feature, layer) {
             const index = selectedFeatures.findIndex(f => f.feature === feature);
             
@@ -663,60 +694,7 @@
             updateSummary();
         }
 
-        // Select features within drawn area
-        function selectFeaturesInDrawnArea(drawnLayer) {
-            console.log('Selecting features in drawn area:', drawnLayer);
-            selectedFeatures = [];
-            
-            if (!geoJsonLayer) {
-                console.log('No geoJsonLayer available');
-                return;
-            }
-
-            geoJsonLayer.eachLayer(function(layer) {
-                const feature = layer.feature;
-                
-                try {
-                    if (isFeatureInDrawnArea(feature, drawnLayer)) {
-                        selectedFeatures.push({feature: feature, layer: layer});
-                        layer.setStyle(highlightStyle(feature));
-                    } else {
-                        layer.setStyle(style(feature));
-                    }
-                } catch (e) {
-                    console.error('Error checking feature intersection:', e);
-                }
-            });
-            
-            console.log('Selected features:', selectedFeatures.length);
-            updateSummary();
-        }
-
-        // Check if feature intersects with drawn area
-        function isFeatureInDrawnArea(feature, drawnLayer) {
-            if (!feature.geometry || !feature.geometry.coordinates) return false;
-            
-            try {
-                // Simple bounds-based intersection check
-                const drawnBounds = drawnLayer.getBounds();
-                
-                if (feature.geometry.type === 'Polygon') {
-                    const coords = feature.geometry.coordinates[0];
-                    return coords.some(coord => {
-                        const lat = coord[1];
-                        const lng = coord[0];
-                        return drawnBounds.contains([lat, lng]);
-                    });
-                }
-                
-                return false;
-            } catch (e) {
-                console.error('Error in intersection check:', e);
-                return false;
-            }
-        }
-
-        // Reset highlight
+        // Reset highlights
         function resetHighlight() {
             if (geoJsonLayer) {
                 geoJsonLayer.eachLayer(function(layer) {
@@ -725,12 +703,12 @@
             }
         }
 
-        // Update summary with aggregated data
+        // Update summary
         function updateSummary() {
             const summaryContent = document.getElementById('summaryContent');
             
             if (selectedFeatures.length === 0) {
-                summaryContent.innerHTML = '<p style="color: #666; text-align: center;">Select areas on the map to view aggregated data</p>';
+                summaryContent.innerHTML = '<p style="color: #666; text-align: center; font-size: 12px;">Select areas to view data</p>';
                 return;
             }
 
@@ -755,7 +733,7 @@
             summaryContent.innerHTML = html;
         }
 
-        // Aggregate data according to rules
+        // Aggregate data
         function aggregateData(propertiesArray) {
             if (propertiesArray.length === 0) return {};
             
@@ -769,10 +747,8 @@
                 if (values.length === 0) return;
                 
                 if (key.includes('_pct') || key.includes('_Pct')) {
-                    // Average for percentage columns
                     result[key] = values.reduce((sum, val) => sum + val, 0) / values.length;
                 } else if (['Dem', 'Rep', 'Total'].includes(key) || key.endsWith('vap')) {
-                    // Sum for vote counts and VAP columns
                     result[key] = values.reduce((sum, val) => sum + val, 0);
                 }
             });
@@ -780,116 +756,13 @@
             return result;
         }
 
-        // Format label for display
+        // Format labels
         function formatLabel(key) {
             return key.replace(/_/g, ' ')
                      .replace(/pct/gi, '%')
                      .replace(/vap/gi, 'VAP')
                      .replace(/\b\w/g, l => l.toUpperCase());
         }
-
-        // Setup filters with continuous ranges
-        function setupFilters() {
-            const filterConfigs = [
-                { id: 'dem', label: 'Democratic', key: 'Dem_pct' },
-                { id: 'rep', label: 'Republican', key: 'Rep_pct' },
-                { id: 'white', label: 'White', key: 'White_Vap_pct' },
-                { id: 'black', label: 'Black', key: 'Black_Vap_pct' },
-                { id: 'hispanic', label: 'Hispanic', key: 'Hispanic_Vap_pct' },
-                { id: 'asian', label: 'Asian', key: 'Asian_Vap_pct' }
-            ];
-
-            filterConfigs.forEach(config => {
-                const minRange = document.getElementById(config.id + 'MinRange');
-                const maxRange = document.getElementById(config.id + 'MaxRange');
-                const value = document.getElementById(config.id + 'Value');
-                const dataRange = dataRanges[config.id];
-                
-                if (minRange && maxRange && dataRange && isFinite(dataRange.min) && isFinite(dataRange.max)) {
-                    const min = Math.floor(dataRange.min);
-                    const max = Math.ceil(dataRange.max);
-                    
-                    minRange.min = min;
-                    minRange.max = max;
-                    minRange.value = min;
-                    
-                    maxRange.min = min;
-                    maxRange.max = max;
-                    maxRange.value = max;
-                    
-                    const updateValue = () => {
-                        const minVal = parseInt(minRange.value);
-                        const maxVal = parseInt(maxRange.value);
-                        value.textContent = `${minVal}% - ${maxVal}%`;
-                        applyFilters();
-                    };
-                    
-                    minRange.addEventListener('input', updateValue);
-                    maxRange.addEventListener('input', updateValue);
-                    
-                    updateValue(); // Initial display
-                }
-            });
-        }
-
-        // Apply filters to map with range filtering
-        function applyFilters() {
-            if (!originalData) return;
-            
-            const filters = {
-                dem: { 
-                    min: parseFloat(document.getElementById('demMinRange').value),
-                    max: parseFloat(document.getElementById('demMaxRange').value)
-                },
-                rep: { 
-                    min: parseFloat(document.getElementById('repMinRange').value),
-                    max: parseFloat(document.getElementById('repMaxRange').value)
-                },
-                white: { 
-                    min: parseFloat(document.getElementById('whiteMinRange').value),
-                    max: parseFloat(document.getElementById('whiteMaxRange').value)
-                },
-                black: { 
-                    min: parseFloat(document.getElementById('blackMinRange').value),
-                    max: parseFloat(document.getElementById('blackMaxRange').value)
-                },
-                hispanic: { 
-                    min: parseFloat(document.getElementById('hispanicMinRange').value),
-                    max: parseFloat(document.getElementById('hispanicMaxRange').value)
-                },
-                asian: { 
-                    min: parseFloat(document.getElementById('asianMinRange').value),
-                    max: parseFloat(document.getElementById('asianMaxRange').value)
-                }
-            };
-            
-            const filteredData = {
-                ...originalData,
-                features: originalData.features.filter(feature => {
-                    const props = feature.properties;
-                    const demPct = parseFloat(props.Dem_pct) || 0;
-                    const repPct = parseFloat(props.Rep_pct) || 0;
-                    const whitePct = parseFloat(props.White_Vap_pct) || 0;
-                    const blackPct = parseFloat(props.Black_Vap_pct) || 0;
-                    const hispanicPct = parseFloat(props.Hispanic_Vap_pct) || 0;
-                    const asianPct = parseFloat(props.Asian_Vap_pct) || 0;
-                    
-                    return demPct >= filters.dem.min && demPct <= filters.dem.max &&
-                           repPct >= filters.rep.min && repPct <= filters.rep.max &&
-                           whitePct >= filters.white.min && whitePct <= filters.white.max &&
-                           blackPct >= filters.black.min && blackPct <= filters.black.max &&
-                           hispanicPct >= filters.hispanic.min && hispanicPct <= filters.hispanic.max &&
-                           asianPct >= filters.asian.min && asianPct <= filters.asian.max;
-                })
-            };
-            
-            loadGeoJSON(filteredData);
-            selectedFeatures = [];
-            updateSummary();
-        }
-
-        // Initialize everything
-        initMap();
     </script>
 </body>
 </html>
