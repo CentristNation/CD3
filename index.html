@@ -94,19 +94,23 @@
         
         .party-filter {
             flex: 1;
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            border-radius: 8px;
             background: white;
+            padding: 10px;
+            border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
+        .party-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
         .party-icon {
-            width: 30px;
-            height: 30px;
+            width: 25px;
+            height: 25px;
             margin-right: 8px;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -120,14 +124,38 @@
             color: #cc0000;
         }
         
+        .range-container {
+            margin: 10px 0;
+        }
+        
+        .range-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
         .range-input {
-            width: 100%;
-            margin: 5px 0;
+            flex: 1;
         }
         
         .range-value {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
+            margin-top: 4px;
+        }
+        
+        .demo-filter {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .demo-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
         
         .summary {
@@ -213,31 +241,14 @@
             z-index: 1000;
         }
         
-        .selection-tools {
+        .debug-info {
             background: rgba(255, 255, 255, 0.9);
             padding: 10px;
             border-radius: 8px;
             margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .tool-button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            margin: 2px;
-            border-radius: 4px;
-            cursor: pointer;
             font-size: 12px;
-        }
-        
-        .tool-button:hover {
-            background: #0056b3;
-        }
-        
-        .tool-button.active {
-            background: #28a745;
+            color: #333;
+            border-left: 4px solid #28a745;
         }
     </style>
 </head>
@@ -250,19 +261,16 @@
             </div>
             
             <div class="loading-message" id="loadingMessage">
-                🔄 Loading GeoJSON data...
+                🔄 Loading prop3.geojson...
+            </div>
+            
+            <div class="debug-info" id="debugInfo" style="display: none;">
+                <strong>Debug Info:</strong><br>
+                <span id="debugContent"></span>
             </div>
             
             <div class="instruction" id="instructionPanel" style="display: none;">
-                💡 Use the selection tools below or click polygons to select areas and view aggregated data.
-            </div>
-            
-            <div class="selection-tools" id="selectionTools" style="display: none;">
-                <div style="font-weight: bold; margin-bottom: 5px;">🎯 Selection Tools</div>
-                <button class="tool-button" id="selectPolygon">📐 Polygon</button>
-                <button class="tool-button" id="selectRectangle">⬜ Rectangle</button>
-                <button class="tool-button" id="selectCircle">⭕ Circle</button>
-                <button class="tool-button" id="clearSelection">🗑️ Clear</button>
+                💡 Use the drawing tools on the map or click individual polygons to select areas and view aggregated data.
             </div>
             
             <div class="filters" id="filtersPanel" style="display: none;">
@@ -270,19 +278,31 @@
                     <div class="filter-title">🎯 Party Filters</div>
                     <div class="party-filters">
                         <div class="party-filter">
-                            <div class="party-icon dem-icon">🐴</div>
-                            <div style="flex: 1;">
+                            <div class="party-header">
+                                <div class="party-icon dem-icon">🐴</div>
                                 <div style="font-size: 12px; font-weight: bold;">Democratic %</div>
-                                <input type="range" class="range-input" id="demRange" min="0" max="100" value="0">
-                                <div class="range-value" id="demValue">Min: 0%</div>
+                            </div>
+                            <div class="range-container">
+                                <div class="range-inputs">
+                                    <input type="range" class="range-input" id="demMinRange" min="0" max="100" value="0">
+                                    <span style="font-size: 10px;">to</span>
+                                    <input type="range" class="range-input" id="demMaxRange" min="0" max="100" value="100">
+                                </div>
+                                <div class="range-value" id="demValue">Range: 0% - 100%</div>
                             </div>
                         </div>
                         <div class="party-filter">
-                            <div class="party-icon rep-icon">🐘</div>
-                            <div style="flex: 1;">
+                            <div class="party-header">
+                                <div class="party-icon rep-icon">🐘</div>
                                 <div style="font-size: 12px; font-weight: bold;">Republican %</div>
-                                <input type="range" class="range-input" id="repRange" min="0" max="100" value="0">
-                                <div class="range-value" id="repValue">Min: 0%</div>
+                            </div>
+                            <div class="range-container">
+                                <div class="range-inputs">
+                                    <input type="range" class="range-input" id="repMinRange" min="0" max="100" value="0">
+                                    <span style="font-size: 10px;">to</span>
+                                    <input type="range" class="range-input" id="repMaxRange" min="0" max="100" value="100">
+                                </div>
+                                <div class="range-value" id="repValue">Range: 0% - 100%</div>
                             </div>
                         </div>
                     </div>
@@ -290,26 +310,42 @@
                 
                 <div class="filter-group">
                     <div class="filter-title">👥 Demographics</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div>
-                            <label style="font-size: 12px; font-weight: bold;">White %</label>
-                            <input type="range" class="range-input" id="whiteRange" min="0" max="100" value="0">
-                            <div class="range-value" id="whiteValue">Min: 0%</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div class="demo-filter">
+                            <div class="demo-label">White %</div>
+                            <div class="range-inputs">
+                                <input type="range" class="range-input" id="whiteMinRange" min="0" max="100" value="0">
+                                <span style="font-size: 10px;">to</span>
+                                <input type="range" class="range-input" id="whiteMaxRange" min="0" max="100" value="100">
+                            </div>
+                            <div class="range-value" id="whiteValue">0% - 100%</div>
                         </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: bold;">Black %</label>
-                            <input type="range" class="range-input" id="blackRange" min="0" max="100" value="0">
-                            <div class="range-value" id="blackValue">Min: 0%</div>
+                        <div class="demo-filter">
+                            <div class="demo-label">Black %</div>
+                            <div class="range-inputs">
+                                <input type="range" class="range-input" id="blackMinRange" min="0" max="100" value="0">
+                                <span style="font-size: 10px;">to</span>
+                                <input type="range" class="range-input" id="blackMaxRange" min="0" max="100" value="100">
+                            </div>
+                            <div class="range-value" id="blackValue">0% - 100%</div>
                         </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: bold;">Hispanic %</label>
-                            <input type="range" class="range-input" id="hispanicRange" min="0" max="100" value="0">
-                            <div class="range-value" id="hispanicValue">Min: 0%</div>
+                        <div class="demo-filter">
+                            <div class="demo-label">Hispanic %</div>
+                            <div class="range-inputs">
+                                <input type="range" class="range-input" id="hispanicMinRange" min="0" max="100" value="0">
+                                <span style="font-size: 10px;">to</span>
+                                <input type="range" class="range-input" id="hispanicMaxRange" min="0" max="100" value="100">
+                            </div>
+                            <div class="range-value" id="hispanicValue">0% - 100%</div>
                         </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: bold;">Asian %</label>
-                            <input type="range" class="range-input" id="asianRange" min="0" max="100" value="0">
-                            <div class="range-value" id="asianValue">Min: 0%</div>
+                        <div class="demo-filter">
+                            <div class="demo-label">Asian %</div>
+                            <div class="range-inputs">
+                                <input type="range" class="range-input" id="asianMinRange" min="0" max="100" value="0">
+                                <span style="font-size: 10px;">to</span>
+                                <input type="range" class="range-input" id="asianMaxRange" min="0" max="100" value="100">
+                            </div>
+                            <div class="range-value" id="asianValue">0% - 100%</div>
                         </div>
                     </div>
                 </div>
@@ -328,23 +364,23 @@
             <div class="legend" id="legend" style="display: none;">
                 <h4>Democratic %</h4>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #b30000;"></div>
+                    <div class="legend-color" style="background-color: #8b0000;"></div>
                     <span>0-20%</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #ff4d4d;"></div>
+                    <div class="legend-color" style="background-color: #dc143c;"></div>
                     <span>20-40%</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #ff9999;"></div>
+                    <div class="legend-color" style="background-color: #ff6b6b;"></div>
                     <span>40-49%</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #6699ff;"></div>
+                    <div class="legend-color" style="background-color: #4dabf7;"></div>
                     <span>50-60%</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #0066cc;"></div>
+                    <div class="legend-color" style="background-color: #1864ab;"></div>
                     <span>60%+</span>
                 </div>
             </div>
@@ -355,10 +391,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.min.js"></script>
     <script>
-        let map, geoJsonLayer, drawnItems, selectedFeatures = [];
+        let map, geoJsonLayer, selectedFeatures = [];
         let originalData = null;
         let dataRanges = {};
-        let currentDrawTool = null;
+        let drawControl = null;
+        let drawnItems = null;
 
         // Initialize map
         function initMap() {
@@ -368,7 +405,7 @@
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            // Initialize drawing layer
+            // Initialize drawn items layer
             drawnItems = new L.FeatureGroup();
             map.addLayer(drawnItems);
 
@@ -383,9 +420,22 @@
                 if (response.ok) {
                     const geojson = await response.json();
                     originalData = geojson;
+                    
+                    // Debug: Check the data structure
+                    console.log('GeoJSON loaded:', geojson);
+                    if (geojson.features && geojson.features.length > 0) {
+                        console.log('Sample feature properties:', geojson.features[0].properties);
+                        const sampleDemPct = geojson.features[0].properties.Dem_pct;
+                        console.log('Sample Dem_pct value:', sampleDemPct, typeof sampleDemPct);
+                        
+                        // Show debug info
+                        showDebugInfo(geojson);
+                    }
+                    
                     calculateDataRanges(geojson);
                     setupFilters();
                     loadGeoJSON(geojson);
+                    setupDrawingControls();
                     showInterface();
                 } else {
                     document.getElementById('loadingMessage').innerHTML = 
@@ -394,31 +444,51 @@
             } catch (error) {
                 document.getElementById('loadingMessage').innerHTML = 
                     '❌ Error loading prop3.geojson: ' + error.message;
+                console.error('Error loading GeoJSON:', error);
             }
+        }
+
+        // Show debug information
+        function showDebugInfo(geojson) {
+            const debugEl = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            
+            const totalFeatures = geojson.features.length;
+            const sampleProps = geojson.features[0].properties;
+            const demPctValues = geojson.features.slice(0, 5).map(f => f.properties.Dem_pct);
+            
+            debugContent.innerHTML = `
+                Features: ${totalFeatures}<br>
+                Sample Dem_pct values: ${demPctValues.join(', ')}<br>
+                Available columns: ${Object.keys(sampleProps).join(', ')}
+            `;
+            
+            debugEl.style.display = 'block';
         }
 
         // Calculate min/max ranges for filters
         function calculateDataRanges(geojson) {
             dataRanges = {
-                dem: { min: 100, max: 0 },
-                rep: { min: 100, max: 0 },
-                white: { min: 100, max: 0 },
-                black: { min: 100, max: 0 },
-                hispanic: { min: 100, max: 0 },
-                asian: { min: 100, max: 0 }
+                dem: { min: Infinity, max: -Infinity },
+                rep: { min: Infinity, max: -Infinity },
+                white: { min: Infinity, max: -Infinity },
+                black: { min: Infinity, max: -Infinity },
+                hispanic: { min: Infinity, max: -Infinity },
+                asian: { min: Infinity, max: -Infinity }
             };
 
             geojson.features.forEach(feature => {
                 const props = feature.properties;
                 
-                // Update ranges
-                const demPct = props.Dem_pct || 0;
-                const repPct = props.Rep_pct || 0;
-                const whitePct = props.White_Vap_pct || 0;
-                const blackPct = props.Black_Vap_pct || 0;
-                const hispanicPct = props.Hispanic_Vap_pct || 0;
-                const asianPct = props.Asian_Vap_pct || 0;
+                // Parse values as numbers, handle both string and number formats
+                const demPct = parseFloat(props.Dem_pct) || 0;
+                const repPct = parseFloat(props.Rep_pct) || 0;
+                const whitePct = parseFloat(props.White_Vap_pct) || 0;
+                const blackPct = parseFloat(props.Black_Vap_pct) || 0;
+                const hispanicPct = parseFloat(props.Hispanic_Vap_pct) || 0;
+                const asianPct = parseFloat(props.Asian_Vap_pct) || 0;
 
+                // Update ranges
                 dataRanges.dem.min = Math.min(dataRanges.dem.min, demPct);
                 dataRanges.dem.max = Math.max(dataRanges.dem.max, demPct);
                 dataRanges.rep.min = Math.min(dataRanges.rep.min, repPct);
@@ -432,34 +502,105 @@
                 dataRanges.asian.min = Math.min(dataRanges.asian.min, asianPct);
                 dataRanges.asian.max = Math.max(dataRanges.asian.max, asianPct);
             });
+
+            console.log('Data ranges calculated:', dataRanges);
+        }
+
+        // Setup drawing controls properly
+        function setupDrawingControls() {
+            // Create draw control
+            drawControl = new L.Control.Draw({
+                position: 'topleft',
+                draw: {
+                    polyline: false,
+                    polygon: {
+                        allowIntersection: false,
+                        drawError: {
+                            color: '#e1e100',
+                            message: '<strong>Oh snap!<strong> you can\'t draw that!'
+                        },
+                        shapeOptions: {
+                            color: '#bada55'
+                        }
+                    },
+                    circle: {
+                        shapeOptions: {
+                            color: '#662d91'
+                        }
+                    },
+                    rectangle: {
+                        shapeOptions: {
+                            color: '#662d91'
+                        }
+                    },
+                    marker: false,
+                    circlemarker: false
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    remove: true
+                }
+            });
+
+            map.addControl(drawControl);
+
+            // Handle draw events
+            map.on(L.Draw.Event.CREATED, function(e) {
+                const type = e.layerType;
+                const layer = e.layer;
+                
+                console.log('Draw created:', type, layer);
+                drawnItems.addLayer(layer);
+                selectFeaturesInDrawnArea(layer);
+            });
+
+            map.on(L.Draw.Event.DELETED, function(e) {
+                console.log('Draw deleted');
+                selectedFeatures = [];
+                updateSummary();
+                resetHighlight();
+            });
+
+            map.on(L.Draw.Event.EDITED, function(e) {
+                console.log('Draw edited');
+                const layers = e.layers;
+                layers.eachLayer(function(layer) {
+                    selectFeaturesInDrawnArea(layer);
+                });
+            });
         }
 
         // Show interface after loading
         function showInterface() {
             document.getElementById('loadingMessage').style.display = 'none';
             document.getElementById('instructionPanel').style.display = 'block';
-            document.getElementById('selectionTools').style.display = 'block';
             document.getElementById('filtersPanel').style.display = 'block';
             document.getElementById('summary').style.display = 'block';
             document.getElementById('legend').style.display = 'block';
         }
 
-        // Color coding function based on Dem_pct
+        // Color coding function based on Dem_pct - more distinct colors
         function getColor(demPct) {
-            if (demPct < 20) return '#b30000';      // Dark red
-            if (demPct < 40) return '#ff4d4d';      // Medium red
-            if (demPct < 49) return '#ff9999';      // Light red
-            if (demPct < 60) return '#6699ff';      // Light blue
-            return '#0066cc';                       // Dark blue
+            const pct = parseFloat(demPct) || 0;
+            console.log('Getting color for Dem_pct:', pct);
+            
+            if (pct < 20) return '#8b0000';      // Dark red
+            if (pct < 40) return '#dc143c';      // Medium red  
+            if (pct < 49) return '#ff6b6b';      // Light red
+            if (pct < 60) return '#4dabf7';      // Light blue
+            return '#1864ab';                    // Dark blue
         }
 
         // Style function for polygons
         function style(feature) {
-            const demPct = feature.properties.Dem_pct || 0;
+            const demPct = parseFloat(feature.properties.Dem_pct) || 0;
+            const color = getColor(demPct);
+            console.log('Styling feature with Dem_pct:', demPct, 'Color:', color);
+            
             return {
-                fillColor: getColor(demPct),
+                fillColor: color,
                 weight: 1,
-                opacity: 0.8,
+                opacity: 1,
                 color: 'white',
                 fillOpacity: 0.7
             };
@@ -467,11 +608,11 @@
 
         // Highlight style
         function highlightStyle(feature) {
-            const demPct = feature.properties.Dem_pct || 0;
+            const demPct = parseFloat(feature.properties.Dem_pct) || 0;
             return {
                 fillColor: getColor(demPct),
                 weight: 3,
-                color: '#666',
+                color: '#ffff00',
                 fillOpacity: 0.9
             };
         }
@@ -487,92 +628,24 @@
                 onEachFeature: function(feature, layer) {
                     // Hover tooltip
                     const props = feature.properties;
+                    const demPct = parseFloat(props.Dem_pct) || 0;
                     const tooltipContent = `
                         <strong>County:</strong> ${props.County || 'N/A'}<br>
                         <strong>VTD:</strong> ${props.VTD || 'N/A'}<br>
-                        <strong>Dem %:</strong> ${(props.Dem_pct || 0).toFixed(1)}%
+                        <strong>Dem %:</strong> ${demPct.toFixed(1)}%
                     `;
                     layer.bindTooltip(tooltipContent);
 
                     // Click to select individual polygons
-                    layer.on('click', function() {
+                    layer.on('click', function(e) {
+                        console.log('Polygon clicked:', feature.properties);
                         toggleFeatureSelection(feature, layer);
+                        L.DomEvent.stopPropagation(e);
                     });
                 }
             }).addTo(map);
 
             map.fitBounds(geoJsonLayer.getBounds());
-        }
-
-        // Setup selection tools
-        function setupSelectionTools() {
-            document.getElementById('selectPolygon').addEventListener('click', function() {
-                activateDrawTool('polygon');
-                setActiveButton(this);
-            });
-
-            document.getElementById('selectRectangle').addEventListener('click', function() {
-                activateDrawTool('rectangle');
-                setActiveButton(this);
-            });
-
-            document.getElementById('selectCircle').addEventListener('click', function() {
-                activateDrawTool('circle');
-                setActiveButton(this);
-            });
-
-            document.getElementById('clearSelection').addEventListener('click', function() {
-                clearAllSelections();
-                clearActiveButton();
-            });
-        }
-
-        // Activate drawing tool
-        function activateDrawTool(tool) {
-            if (currentDrawTool) {
-                currentDrawTool.disable();
-            }
-
-            switch(tool) {
-                case 'polygon':
-                    currentDrawTool = new L.Draw.Polygon(map);
-                    break;
-                case 'rectangle':
-                    currentDrawTool = new L.Draw.Rectangle(map);
-                    break;
-                case 'circle':
-                    currentDrawTool = new L.Draw.Circle(map);
-                    break;
-            }
-
-            if (currentDrawTool) {
-                currentDrawTool.enable();
-            }
-        }
-
-        // Set active button style
-        function setActiveButton(button) {
-            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-        }
-
-        // Clear active button
-        function clearActiveButton() {
-            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
-        }
-
-        // Handle drawing events
-        function setupDrawingEvents() {
-            map.on(L.Draw.Event.CREATED, function(e) {
-                const layer = e.layer;
-                drawnItems.addLayer(layer);
-                selectFeaturesInDrawnArea(layer);
-                if (currentDrawTool) {
-                    currentDrawTool.disable();
-                    currentDrawTool = null;
-                }
-                clearActiveButton();
-            });
         }
 
         // Toggle individual feature selection
@@ -592,18 +665,30 @@
 
         // Select features within drawn area
         function selectFeaturesInDrawnArea(drawnLayer) {
+            console.log('Selecting features in drawn area:', drawnLayer);
             selectedFeatures = [];
             
+            if (!geoJsonLayer) {
+                console.log('No geoJsonLayer available');
+                return;
+            }
+
             geoJsonLayer.eachLayer(function(layer) {
                 const feature = layer.feature;
-                if (isFeatureInDrawnArea(feature, drawnLayer)) {
-                    selectedFeatures.push({feature: feature, layer: layer});
-                    layer.setStyle(highlightStyle(feature));
-                } else {
-                    layer.setStyle(style(feature));
+                
+                try {
+                    if (isFeatureInDrawnArea(feature, drawnLayer)) {
+                        selectedFeatures.push({feature: feature, layer: layer});
+                        layer.setStyle(highlightStyle(feature));
+                    } else {
+                        layer.setStyle(style(feature));
+                    }
+                } catch (e) {
+                    console.error('Error checking feature intersection:', e);
                 }
             });
             
+            console.log('Selected features:', selectedFeatures.length);
             updateSummary();
         }
 
@@ -612,27 +697,23 @@
             if (!feature.geometry || !feature.geometry.coordinates) return false;
             
             try {
-                const featureLayer = L.geoJSON(feature);
+                // Simple bounds-based intersection check
                 const drawnBounds = drawnLayer.getBounds();
-                const featureBounds = featureLayer.getBounds();
                 
-                // Check if bounds intersect
-                return drawnBounds.intersects(featureBounds);
+                if (feature.geometry.type === 'Polygon') {
+                    const coords = feature.geometry.coordinates[0];
+                    return coords.some(coord => {
+                        const lat = coord[1];
+                        const lng = coord[0];
+                        return drawnBounds.contains([lat, lng]);
+                    });
+                }
+                
+                return false;
             } catch (e) {
+                console.error('Error in intersection check:', e);
                 return false;
             }
-        }
-
-        // Clear all selections
-        function clearAllSelections() {
-            selectedFeatures = [];
-            drawnItems.clearLayers();
-            if (currentDrawTool) {
-                currentDrawTool.disable();
-                currentDrawTool = null;
-            }
-            resetHighlight();
-            updateSummary();
         }
 
         // Reset highlight
@@ -707,7 +788,7 @@
                      .replace(/\b\w/g, l => l.toUpperCase());
         }
 
-        // Setup filters with dynamic ranges
+        // Setup filters with continuous ranges
         function setupFilters() {
             const filterConfigs = [
                 { id: 'dem', label: 'Democratic', key: 'Dem_pct' },
@@ -719,48 +800,86 @@
             ];
 
             filterConfigs.forEach(config => {
-                const range = document.getElementById(config.id + 'Range');
+                const minRange = document.getElementById(config.id + 'MinRange');
+                const maxRange = document.getElementById(config.id + 'MaxRange');
                 const value = document.getElementById(config.id + 'Value');
                 const dataRange = dataRanges[config.id];
                 
-                if (range && dataRange) {
-                    range.min = Math.floor(dataRange.min);
-                    range.max = Math.ceil(dataRange.max);
-                    range.value = Math.floor(dataRange.min);
+                if (minRange && maxRange && dataRange && isFinite(dataRange.min) && isFinite(dataRange.max)) {
+                    const min = Math.floor(dataRange.min);
+                    const max = Math.ceil(dataRange.max);
                     
-                    value.textContent = `Range: ${Math.floor(dataRange.min)}% - ${Math.ceil(dataRange.max)}%`;
+                    minRange.min = min;
+                    minRange.max = max;
+                    minRange.value = min;
                     
-                    range.addEventListener('input', function() {
-                        value.textContent = `Min: ${this.value}% (Max: ${Math.ceil(dataRange.max)}%)`;
+                    maxRange.min = min;
+                    maxRange.max = max;
+                    maxRange.value = max;
+                    
+                    const updateValue = () => {
+                        const minVal = parseInt(minRange.value);
+                        const maxVal = parseInt(maxRange.value);
+                        value.textContent = `${minVal}% - ${maxVal}%`;
                         applyFilters();
-                    });
+                    };
+                    
+                    minRange.addEventListener('input', updateValue);
+                    maxRange.addEventListener('input', updateValue);
+                    
+                    updateValue(); // Initial display
                 }
             });
         }
 
-        // Apply filters to map
+        // Apply filters to map with range filtering
         function applyFilters() {
             if (!originalData) return;
             
             const filters = {
-                dem: parseFloat(document.getElementById('demRange').value),
-                rep: parseFloat(document.getElementById('repRange').value),
-                white: parseFloat(document.getElementById('whiteRange').value),
-                black: parseFloat(document.getElementById('blackRange').value),
-                hispanic: parseFloat(document.getElementById('hispanicRange').value),
-                asian: parseFloat(document.getElementById('asianRange').value)
+                dem: { 
+                    min: parseFloat(document.getElementById('demMinRange').value),
+                    max: parseFloat(document.getElementById('demMaxRange').value)
+                },
+                rep: { 
+                    min: parseFloat(document.getElementById('repMinRange').value),
+                    max: parseFloat(document.getElementById('repMaxRange').value)
+                },
+                white: { 
+                    min: parseFloat(document.getElementById('whiteMinRange').value),
+                    max: parseFloat(document.getElementById('whiteMaxRange').value)
+                },
+                black: { 
+                    min: parseFloat(document.getElementById('blackMinRange').value),
+                    max: parseFloat(document.getElementById('blackMaxRange').value)
+                },
+                hispanic: { 
+                    min: parseFloat(document.getElementById('hispanicMinRange').value),
+                    max: parseFloat(document.getElementById('hispanicMaxRange').value)
+                },
+                asian: { 
+                    min: parseFloat(document.getElementById('asianMinRange').value),
+                    max: parseFloat(document.getElementById('asianMaxRange').value)
+                }
             };
             
             const filteredData = {
                 ...originalData,
                 features: originalData.features.filter(feature => {
                     const props = feature.properties;
-                    return (props.Dem_pct || 0) >= filters.dem &&
-                           (props.Rep_pct || 0) >= filters.rep &&
-                           (props.White_Vap_pct || 0) >= filters.white &&
-                           (props.Black_Vap_pct || 0) >= filters.black &&
-                           (props.Hispanic_Vap_pct || 0) >= filters.hispanic &&
-                           (props.Asian_Vap_pct || 0) >= filters.asian;
+                    const demPct = parseFloat(props.Dem_pct) || 0;
+                    const repPct = parseFloat(props.Rep_pct) || 0;
+                    const whitePct = parseFloat(props.White_Vap_pct) || 0;
+                    const blackPct = parseFloat(props.Black_Vap_pct) || 0;
+                    const hispanicPct = parseFloat(props.Hispanic_Vap_pct) || 0;
+                    const asianPct = parseFloat(props.Asian_Vap_pct) || 0;
+                    
+                    return demPct >= filters.dem.min && demPct <= filters.dem.max &&
+                           repPct >= filters.rep.min && repPct <= filters.rep.max &&
+                           whitePct >= filters.white.min && whitePct <= filters.white.max &&
+                           blackPct >= filters.black.min && blackPct <= filters.black.max &&
+                           hispanicPct >= filters.hispanic.min && hispanicPct <= filters.hispanic.max &&
+                           asianPct >= filters.asian.min && asianPct <= filters.asian.max;
                 })
             };
             
@@ -771,8 +890,6 @@
 
         // Initialize everything
         initMap();
-        setupSelectionTools();
-        setupDrawingEvents();
     </script>
 </body>
 </html>
