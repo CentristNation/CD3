@@ -1,25 +1,4 @@
-        // Test function to verify buffer functionality
-        function testBufferTool() {
-            console.log('🧪 Testing buffer tool...');
-            const bufferBtn = document.getElementById('bufferBtn');
-            const bufferControls = document.getElementById('bufferControls');
-            
-            if (bufferBtn) {
-                console.log('✅ Buffer button found, testing click...');
-                // Force show buffer controls for testing
-                if (bufferControls) {
-                    bufferControls.style.display = 'flex';
-                    console.log('✅ Buffer controls forced visible');
-                }
-                
-                // Test the toggle function
-                console.log('Current buffer mode:', isBufferMode);
-                toggleBufferMode();
-                console.log('Buffer mode after toggle:', isBufferMode);
-            } else {
-                console.error('❌ Buffer button not found for testing');
-            }
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -315,14 +294,14 @@
             </div>
             
             <div class="status-message" id="statusMessage">
-                🔄 Loading data...
+                Loading data...
             </div>
             
             <div class="section" id="selectionSection">
-                <div class="section-title">🎯 Selection Tools</div>
+                <div class="section-title">Selection Tools</div>
                 <div class="selection-tools">
-                    <button class="tool-button" id="bufferBtn" onclick="toggleBufferMode()">📍 Buffer Select</button>
-                    <button class="tool-button" id="clearSelection" onclick="clearAllSelections()">🗑️ Clear All</button>
+                    <button class="tool-button" id="bufferBtn" onclick="toggleBufferMode()">Buffer Select</button>
+                    <button class="tool-button" id="clearSelection" onclick="clearAllSelections()">Clear All</button>
                     <div class="mode-info" id="modeInfo">Use drawing tools in top-right corner of map</div>
                     <div class="buffer-controls" id="bufferControls" style="display: none;">
                         <input type="range" class="buffer-input" id="bufferRange" min="1" max="50" value="10">
@@ -332,7 +311,7 @@
             </div>
             
             <div class="section" id="countySection">
-                <div class="section-title">🏛️ County Filter</div>
+                <div class="section-title">County Filter</div>
                 <div class="county-controls">
                     <button class="county-btn" onclick="selectAllCounties()">All</button>
                     <button class="county-btn" onclick="selectNoCounties()">None</button>
@@ -343,11 +322,11 @@
             </div>
             
             <div class="section" id="filterSection">
-                <div class="section-title">🎯 Filters (Min %)</div>
+                <div class="section-title">Filters (Min %)</div>
                 
                 <div class="filter-item">
                     <div class="filter-label">
-                        <div class="party-icon dem-icon">🐴</div>
+                        <div class="party-icon dem-icon">D</div>
                         Democratic %
                     </div>
                     <input type="range" class="filter-slider" id="demSlider" min="0" max="100" value="0">
@@ -356,7 +335,7 @@
                 
                 <div class="filter-item">
                     <div class="filter-label">
-                        <div class="party-icon rep-icon">🐘</div>
+                        <div class="party-icon rep-icon">R</div>
                         Republican %
                     </div>
                     <input type="range" class="filter-slider" id="repSlider" min="0" max="100" value="0">
@@ -389,7 +368,7 @@
             </div>
             
             <div class="section" id="summarySection">
-                <div class="section-title">📊 Selected Area Summary</div>
+                <div class="section-title">Selected Area Summary</div>
                 <div id="summaryContent">
                     <p style="color: #666; text-align: center; font-size: 12px;">Select areas to view data</p>
                 </div>
@@ -437,7 +416,7 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Starting application...');
+            console.log('Starting application...');
             
             // Debug: Check if buffer elements exist
             setTimeout(() => {
@@ -445,18 +424,18 @@
                 const bufferControls = document.getElementById('bufferControls');
                 const bufferRange = document.getElementById('bufferRange');
                 
-                console.log('🔍 Buffer elements check:');
-                console.log('- Buffer button:', bufferBtn ? '✅ Found' : '❌ Missing');
-                console.log('- Buffer controls:', bufferControls ? '✅ Found' : '❌ Missing');
-                console.log('- Buffer range:', bufferRange ? '✅ Found' : '❌ Missing');
+                console.log('Buffer elements check:');
+                console.log('- Buffer button:', bufferBtn ? 'Found' : 'Missing');
+                console.log('- Buffer controls:', bufferControls ? 'Found' : 'Missing');
+                console.log('- Buffer range:', bufferRange ? 'Found' : 'Missing');
                 
                 if (bufferBtn) {
-                    console.log('✅ Buffer tool should be visible in sidebar');
+                    console.log('Buffer tool should be visible in sidebar');
                     // Make sure it's visible
                     bufferBtn.style.display = 'inline-block';
                     bufferBtn.style.visibility = 'visible';
                 } else {
-                    console.error('❌ Buffer button not found in DOM');
+                    console.error('Buffer button not found in DOM');
                 }
                 
                 if (bufferControls) {
@@ -466,7 +445,7 @@
             
             // Force show interface immediately
             setTimeout(() => {
-                updateStatus('🔄 Initializing map and interface...');
+                updateStatus('Initializing map and interface...');
             }, 100);
             
             // Initialize map after a short delay to ensure DOM is ready
@@ -477,8 +456,8 @@
             // Force load dummy data as backup after 3 seconds if nothing else worked
             setTimeout(() => {
                 if (!originalData) {
-                    console.log('🔧 Emergency fallback: forcing dummy data load');
-                    updateStatus('🔧 Fallback: Loading test data...');
+                    console.log('Emergency fallback: forcing dummy data load');
+                    updateStatus('Fallback: Loading test data...');
                     useDummyData();
                 }
             }, 3000);
@@ -487,8 +466,8 @@
         // Initialize map with better error handling
         function initMap() {
             try {
-                console.log('🗺️ Initializing map...');
-                updateStatus('🗺️ Setting up map...');
+                console.log('Initializing map...');
+                updateStatus('Setting up map...');
                 
                 map = L.map('map').setView([32.0, -97.0], 6);
                 
@@ -498,15 +477,15 @@
 
                 // Setup buffer selection click handler
                 map.on('click', function(e) {
-                    console.log('🖱️ Map clicked at:', e.latlng, 'Buffer mode:', isBufferMode);
+                    console.log('Map clicked at:', e.latlng, 'Buffer mode:', isBufferMode);
                     if (isBufferMode) {
-                        console.log('📍 Creating buffer selection...');
+                        console.log('Creating buffer selection...');
                         createBufferSelection(e.latlng);
                     }
                 });
 
-                console.log('✅ Base map loaded');
-                updateStatus('✅ Map ready, loading data...');
+                console.log('Base map loaded');
+                updateStatus('Map ready, loading data...');
                 
                 // Setup drawing controls
                 setupDrawingControls();
@@ -517,15 +496,15 @@
                 // Load data
                 loadGeoJSONFromFile();
                 
-                console.log('✅ Map initialization complete');
+                console.log('Map initialization complete');
                 
             } catch (error) {
-                console.error('❌ Error initializing map:', error);
-                updateStatus('❌ Error initializing map: ' + error.message);
+                console.error('Error initializing map:', error);
+                updateStatus('Error initializing map: ' + error.message);
                 
                 // Even if map fails, try to force dummy data
                 setTimeout(() => {
-                    updateStatus('🔧 Attempting emergency data load...');
+                    updateStatus('Attempting emergency data load...');
                     useDummyData();
                 }, 2000);
             }
@@ -536,7 +515,7 @@
             try {
                 // Check if L.Draw is available
                 if (typeof L.Draw === 'undefined') {
-                    console.warn('⚠️ Leaflet Draw not available, using simple selection');
+                    console.warn('Leaflet Draw not available, using simple selection');
                     setupSimpleSelection();
                     return;
                 }
@@ -574,19 +553,19 @@
                     resetHighlight();
                 });
                 
-                console.log('✅ Leaflet Draw tools loaded');
-                updateStatus('✅ Drawing tools loaded');
+                console.log('Leaflet Draw tools loaded');
+                updateStatus('Drawing tools loaded');
                 
             } catch (error) {
-                console.error('❌ Error setting up draw controls:', error);
+                console.error('Error setting up draw controls:', error);
                 setupSimpleSelection();
             }
         }
 
         // Fallback: Simple click selection if draw tools fail
         function setupSimpleSelection() {
-            console.log('🔧 Setting up simple click selection as fallback');
-            updateStatus('ℹ️ Click polygons to select them, or use buffer selection');
+            console.log('Setting up simple click selection as fallback');
+            updateStatus('Click polygons to select them, or use buffer selection');
             
             // Update only the mode info, keep the buffer tool
             const modeInfo = document.getElementById('modeInfo');
@@ -595,17 +574,23 @@
             }
             
             // Keep the buffer tool visible and functional
-            console.log('✅ Buffer tool preserved in fallback mode');
+            console.log('Buffer tool preserved in fallback mode');
         }
 
         // Clear selections - works with both draw tools and simple selection
         function clearAllSelections() {
-            console.log('🗑️ Clearing all selections...');
+            console.log('Clearing all selections...');
             selectedFeatures = [];
             
             // Clear drawn items if draw tools are available
             if (drawnItems) {
                 drawnItems.clearLayers();
+            }
+            
+            // Fallback: manually remove buffer circle if stored
+            if (window.lastBufferCircle) {
+                map.removeLayer(window.lastBufferCircle);
+                window.lastBufferCircle = null;
             }
             
             // Exit buffer mode
@@ -615,12 +600,12 @@
             
             resetHighlight();
             updateSummary();
-            updateStatus('✅ Selections cleared');
+            updateStatus('Selections cleared');
         }
 
         // Setup buffer controls
         function setupBufferControls() {
-            console.log('🔧 Setting up buffer controls...');
+            console.log('Setting up buffer controls...');
             
             const bufferRange = document.getElementById('bufferRange');
             const bufferValue = document.getElementById('bufferValue');
@@ -636,20 +621,20 @@
                 bufferRange.addEventListener('input', function() {
                     bufferRadius = parseInt(this.value);
                     bufferValue.textContent = bufferRadius + ' miles';
-                    console.log('🎚️ Buffer radius changed to:', bufferRadius, 'miles');
+                    console.log('Buffer radius changed to:', bufferRadius, 'miles');
                 });
                 
                 // Set initial value
                 bufferValue.textContent = bufferRadius + ' miles';
-                console.log('✅ Buffer controls initialized');
+                console.log('Buffer controls initialized');
             } else {
-                console.error('❌ Buffer controls not found in DOM');
+                console.error('Buffer controls not found in DOM');
             }
             
             // Ensure buffer button is visible and functional
             if (bufferBtn) {
                 bufferBtn.style.display = 'inline-block';
-                console.log('✅ Buffer button made visible');
+                console.log('Buffer button made visible');
             }
         }
 
@@ -660,36 +645,36 @@
             const bufferControls = document.getElementById('bufferControls');
             const modeInfo = document.getElementById('modeInfo');
             
-            console.log('🔄 Buffer mode toggled:', isBufferMode);
+            console.log('Buffer mode toggled:', isBufferMode);
             
             if (isBufferMode) {
                 bufferBtn.classList.add('buffer-active');
-                bufferBtn.textContent = '✋ Exit Buffer Mode';
+                bufferBtn.textContent = 'Exit Buffer Mode';
                 bufferControls.style.display = 'flex';
                 modeInfo.textContent = `Click map to select areas within ${bufferRadius} mile radius`;
                 map.getContainer().style.cursor = 'crosshair';
-                updateStatus(`📍 Buffer mode active - Click map to select within ${bufferRadius} miles`);
+                updateStatus(`Buffer mode active - Click map to select within ${bufferRadius} miles`);
                 
                 // Make sure buffer controls are visible
                 const bufferRange = document.getElementById('bufferRange');
                 const bufferValue = document.getElementById('bufferValue');
                 if (bufferRange && bufferValue) {
                     bufferValue.textContent = bufferRadius + ' miles';
-                    console.log('✅ Buffer controls visible');
+                    console.log('Buffer controls visible');
                 }
             } else {
                 bufferBtn.classList.remove('buffer-active');
-                bufferBtn.textContent = '📍 Buffer Select';
+                bufferBtn.textContent = 'Buffer Select';
                 bufferControls.style.display = 'none';
                 modeInfo.textContent = 'Use drawing tools in top-right corner of map';
                 map.getContainer().style.cursor = '';
-                updateStatus('ℹ️ Buffer mode disabled');
+                updateStatus('Buffer mode disabled');
             }
         }
 
         // Create buffer selection around a point
         function createBufferSelection(latlng) {
-            console.log(`🎯 Creating ${bufferRadius} mile buffer at`, latlng);
+            console.log(`Creating ${bufferRadius} mile buffer at`, latlng);
             
             // Clear any existing selection highlights first
             resetHighlight();
@@ -709,24 +694,26 @@
                 opacity: 0.8
             });
             
-            // Add to map immediately
-            bufferCircle.addTo(map);
-            
-            // Add to drawn items for cleanup
+            // Add ONLY to drawn items for proper cleanup
             if (drawnItems) {
                 drawnItems.addLayer(bufferCircle);
+            } else {
+                // Fallback: add directly to map if drawnItems not available
+                bufferCircle.addTo(map);
+                // Store reference for manual cleanup
+                window.lastBufferCircle = bufferCircle;
             }
             
             // Select features within buffer
             selectFeaturesInBuffer(latlng, bufferRadius / 69); // Convert miles to degrees
             
             // Keep buffer mode active (don't auto-exit)
-            updateStatus(`📍 Selected ${selectedFeatures.length} areas within ${bufferRadius} miles`);
+            updateStatus(`Selected ${selectedFeatures.length} areas within ${bufferRadius} miles`);
         }
 
         // Select features within buffer radius
         function selectFeaturesInBuffer(centerPoint, radiusInDegrees) {
-            console.log(`🔍 Checking features within ${radiusInDegrees.toFixed(4)} degrees of`, centerPoint);
+            console.log(`Checking features within ${radiusInDegrees.toFixed(4)} degrees of`, centerPoint);
             selectedFeatures = [];
             
             if (!geoJsonLayer) {
@@ -745,13 +732,13 @@
                     selectedFeatures.push({feature: feature, layer: layer});
                     layer.setStyle(highlightStyle(feature));
                     selectedCount++;
-                    console.log(`✅ Selected: ${feature.properties.County} (${feature.properties.VTD})`);
+                    console.log(`Selected: ${feature.properties.County} (${feature.properties.VTD})`);
                 } else {
                     layer.setStyle(style(feature));
                 }
             });
             
-            console.log(`📍 Buffer selection complete: ${selectedCount}/${checkedCount} features selected`);
+            console.log(`Buffer selection complete: ${selectedCount}/${checkedCount} features selected`);
             updateSummary();
         }
 
@@ -812,7 +799,7 @@
 
         // Setup county filter
         function setupCountyFilter(data) {
-            console.log('🏛️ Setting up county filter...');
+            console.log('Setting up county filter...');
             
             // Extract unique counties
             const counties = [...new Set(data.features.map(f => f.properties.County || 'Unknown'))].sort();
@@ -852,7 +839,7 @@
                 countyFilter.appendChild(item);
             });
             
-            console.log(`✅ County filter ready with ${counties.length} counties`);
+            console.log(`County filter ready with ${counties.length} counties`);
         }
 
         // Select all counties
@@ -879,27 +866,27 @@
 
         // Load GeoJSON data with better error handling
         async function loadGeoJSONFromFile() {
-            console.log('📁 Attempting to load prop3.geojson...');
-            updateStatus('🔄 Looking for prop3.geojson...');
+            console.log('Attempting to load prop3.geojson...');
+            updateStatus('Looking for prop3.geojson...');
             
             try {
                 const response = await fetch('prop3.geojson');
                 if (response.ok) {
                     const geojson = await response.json();
-                    console.log('✅ Loaded external file with', geojson.features?.length, 'features');
-                    updateStatus('✅ Loaded prop3.geojson successfully!');
+                    console.log('Loaded external file with', geojson.features?.length, 'features');
+                    updateStatus('Loaded prop3.geojson successfully!');
                     processGeoJSON(geojson);
                     return;
                 } else {
-                    console.log('⚠️ prop3.geojson returned', response.status);
+                    console.log('prop3.geojson returned', response.status);
                 }
             } catch (error) {
-                console.log('⚠️ Could not load prop3.geojson:', error.message);
+                console.log('Could not load prop3.geojson:', error.message);
             }
             
             // Always fall back to dummy data
-            console.log('🧪 Loading dummy data for testing...');
-            updateStatus('🧪 Loading test data (prop3.geojson not found)...');
+            console.log('Loading dummy data for testing...');
+            updateStatus('Loading test data (prop3.geojson not found)...');
             
             // Small delay to show the message
             setTimeout(() => {
@@ -918,8 +905,8 @@
         // Create dummy data - more robust and visible
         function useDummyData() {
             try {
-                console.log('🧪 Creating visible dummy data...');
-                updateStatus('🧪 Creating 20 test districts...');
+                console.log('Creating visible dummy data...');
+                updateStatus('Creating 20 test districts...');
                 
                 const features = [];
                 const counties = ["Jefferson", "Harris", "Dallas", "Travis", "Bexar", "Williamson", "Collin", "Fort Bend", "Denton", "Hays", "Brazoria", "Galveston", "Montgomery", "Tarrant", "Bell", "Parker", "Ellis", "Johnson", "Kaufman", "Henderson"];
@@ -976,7 +963,7 @@
                         
                         features.push(feature);
                         const pctDisplay = (demPct * 100).toFixed(1);
-                        console.log(`✅ ${county}: ${pctDisplay}% Dem (${demPct < 0.5 ? 'RED' : 'BLUE'})`);
+                        console.log(`${county}: ${pctDisplay}% Dem (${demPct < 0.5 ? 'RED' : 'BLUE'})`);
                         id++;
                     }
                 }
@@ -986,61 +973,61 @@
                     "features": features
                 };
                 
-                console.log('✅ Created', features.length, 'test districts');
+                console.log('Created', features.length, 'test districts');
                 console.log('Expected colors: RED (Parker 26%), BLUE (Travis 73%)');
                 
                 processGeoJSON(dummyData);
                 
             } catch (error) {
-                console.error('❌ Error creating dummy data:', error);
-                updateStatus('❌ Error creating test data: ' + error.message);
+                console.error('Error creating dummy data:', error);
+                updateStatus('Error creating test data: ' + error.message);
             }
         }
 
         // Process GeoJSON data with robust error handling
         function processGeoJSON(geojson) {
             try {
-                console.log('🔄 Processing GeoJSON data...');
+                console.log('Processing GeoJSON data...');
                 
                 if (!geojson || !geojson.features || geojson.features.length === 0) {
                     throw new Error('Invalid or empty GeoJSON data');
                 }
                 
                 originalData = geojson;
-                console.log('✅ Data stored:', geojson.features.length, 'features');
+                console.log('Data stored:', geojson.features.length, 'features');
                 
                 // Setup filters first
                 setupFilters();
-                console.log('✅ Filters configured');
+                console.log('Filters configured');
                 
                 // Setup county filter
                 setupCountyFilter(geojson);
-                console.log('✅ County filter configured');
+                console.log('County filter configured');
                 
                 // Load onto map
                 loadGeoJSON(geojson);
-                console.log('✅ Map loaded');
+                console.log('Map loaded');
                 
                 // Update status
                 const featureCount = geojson.features.length;
                 const countyCount = new Set(geojson.features.map(f => f.properties.County)).size;
-                updateStatus(`✅ Ready! ${featureCount} districts, ${countyCount} counties loaded.`);
+                updateStatus(`Ready! ${featureCount} districts, ${countyCount} counties loaded.`);
                 
                 // Force a sample color check
                 const sampleFeature = geojson.features[0];
                 const sampleDemPct = sampleFeature.properties.Dem_pct;
                 const sampleColor = getColor(sampleDemPct);
-                console.log(`🎨 Sample: ${sampleFeature.properties.County} = ${(sampleDemPct*100).toFixed(1)}% Dem → ${sampleColor}`);
+                console.log(`Sample: ${sampleFeature.properties.County} = ${(sampleDemPct*100).toFixed(1)}% Dem → ${sampleColor}`);
                 
-                console.log('✅ GeoJSON processing completed successfully');
+                console.log('GeoJSON processing completed successfully');
                 
             } catch (error) {
-                console.error('❌ Error processing GeoJSON:', error);
-                updateStatus('❌ Error processing data: ' + error.message);
+                console.error('Error processing GeoJSON:', error);
+                updateStatus('Error processing data: ' + error.message);
                 
                 // Try to still show the interface
                 setTimeout(() => {
-                    updateStatus('ℹ️ Interface ready, but data failed to load');
+                    updateStatus('Interface ready, but data failed to load');
                 }, 1000);
             }
         }
@@ -1102,7 +1089,7 @@
             
             const visibleCount = filteredData.features.length;
             const totalCount = originalData.features.length;
-            console.log(`🔍 Filters applied: ${visibleCount}/${totalCount} features visible`);
+            console.log(`Filters applied: ${visibleCount}/${totalCount} features visible`);
         }
 
         // Color coding - handle decimal percentages (0.65 = 65%)
@@ -1158,6 +1145,11 @@
                     `);
 
                     layer.on('click', function(e) {
+                        // In buffer mode, let the map handle the click for buffer selection
+                        if (isBufferMode) {
+                            return; // Don't handle individual polygon selection in buffer mode
+                        }
+                        
                         toggleFeatureSelection(feature, layer);
                         L.DomEvent.stopPropagation(e);
                     });
@@ -1169,7 +1161,7 @@
 
         // Select features in drawn area
         function selectFeaturesInDrawnArea(drawnLayer) {
-            console.log('🎯 Selecting features in drawn area...');
+            console.log('Selecting features in drawn area...');
             selectedFeatures = [];
             
             if (!geoJsonLayer) return;
@@ -1295,6 +1287,29 @@
                      .replace(/pct/gi, '%')
                      .replace(/vap/gi, 'VAP')
                      .replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Test function to verify buffer functionality
+        function testBufferTool() {
+            console.log('Testing buffer tool...');
+            const bufferBtn = document.getElementById('bufferBtn');
+            const bufferControls = document.getElementById('bufferControls');
+            
+            if (bufferBtn) {
+                console.log('Buffer button found, testing click...');
+                // Force show buffer controls for testing
+                if (bufferControls) {
+                    bufferControls.style.display = 'flex';
+                    console.log('Buffer controls forced visible');
+                }
+                
+                // Test the toggle function
+                console.log('Current buffer mode:', isBufferMode);
+                toggleBufferMode();
+                console.log('Buffer mode after toggle:', isBufferMode);
+            } else {
+                console.error('Buffer button not found for testing');
+            }
         }
     </script>
 </body>
