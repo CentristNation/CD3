@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proposed CD 3 Data Analytics</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
     <style>
         body {
             margin: 0;
@@ -405,7 +405,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.min.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script>
         let map, geoJsonLayer, selectedFeatures = [];
         let originalData = null;
@@ -414,54 +414,47 @@
         let selectedCounties = new Set();
         let bufferRadius = 10; // miles
 
-        // Initialize on page load
+        // Initialize on page load with better library loading
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Starting application...');
             
-            // Debug: Check if buffer elements exist
-            setTimeout(() => {
-                const bufferBtn = document.getElementById('bufferBtn');
-                const bufferControls = document.getElementById('bufferControls');
-                const bufferRange = document.getElementById('bufferRange');
-                
-                console.log('Buffer elements check:');
-                console.log('- Buffer button:', bufferBtn ? 'Found' : 'Missing');
-                console.log('- Buffer controls:', bufferControls ? 'Found' : 'Missing');
-                console.log('- Buffer range:', bufferRange ? 'Found' : 'Missing');
-                
-                if (bufferBtn) {
-                    console.log('Buffer tool should be visible in sidebar');
-                    // Make sure it's visible
-                    bufferBtn.style.display = 'inline-block';
-                    bufferBtn.style.visibility = 'visible';
-                } else {
-                    console.error('Buffer button not found in DOM');
-                }
-                
-                if (bufferControls) {
-                    bufferControls.style.visibility = 'visible';
-                }
-            }, 1000);
-            
-            // Force show interface immediately
+            // Wait for all scripts to load before initializing
             setTimeout(() => {
                 updateStatus('Initializing map and interface...');
-            }, 100);
-            
-            // Initialize map after a short delay to ensure DOM is ready
-            setTimeout(() => {
                 initMap();
-            }, 300);
+            }, 500);
             
-            // Force load dummy data as backup after 3 seconds if nothing else worked
+            // Force load dummy data as backup after 5 seconds if nothing else worked
             setTimeout(() => {
                 if (!originalData) {
                     console.log('Emergency fallback: forcing dummy data load');
                     updateStatus('Fallback: Loading test data...');
                     useDummyData();
                 }
-            }, 3000);
+            }, 5000);
         });
+
+        // Wait for Leaflet Draw to load properly
+        function waitForLeafletDraw(callback, maxAttempts = 10) {
+            let attempts = 0;
+            
+            function checkForDraw() {
+                attempts++;
+                
+                if (typeof L !== 'undefined' && typeof L.Draw !== 'undefined' && typeof L.Control.Draw !== 'undefined') {
+                    console.log('Leaflet Draw loaded successfully after', attempts, 'attempts');
+                    callback(true);
+                } else if (attempts >= maxAttempts) {
+                    console.warn('Leaflet Draw failed to load after', maxAttempts, 'attempts');
+                    callback(false);
+                } else {
+                    console.log('Waiting for Leaflet Draw... attempt', attempts);
+                    setTimeout(checkForDraw, 200);
+                }
+            }
+            
+            checkForDraw();
+        }
 
         // Initialize map with better error handling
         function initMap() {
@@ -510,56 +503,86 @@
             }
         }
 
-        // Setup Leaflet Draw controls with fallback
+        // Setup Leaflet Draw controls with proper loading detection
         function setupDrawingControls() {
-            try {
-                // Check if L.Draw is available
-                if (typeof L.Draw === 'undefined') {
-                    console.warn('Leaflet Draw not available, using simple selection');
-                    setupSimpleSelection();
-                    return;
-                }
-                
-                drawnItems = new L.FeatureGroup();
-                map.addLayer(drawnItems);
+            console.log('Setting up drawing controls...');
+            updateStatus('Loading drawing tools...');
+            
+            waitForLeafletDraw(function(loaded) {
+                if (loaded) {
+                    try {
+                        drawnItems = new L.FeatureGroup();
+                        map.addLayer(drawnItems);
 
-                const drawControl = new L.Control.Draw({
-                    position: 'topright',
-                    draw: {
-                        polygon: true,
-                        rectangle: true,
-                        circle: true,
-                        polyline: false,
-                        marker: false,
-                        circlemarker: false
-                    },
-                    edit: {
-                        featureGroup: drawnItems,
-                        remove: true
+                        const drawControl = new L.Control.Draw({
+                            position: 'topright',
+                            draw: {
+                                polygon: {
+                                    shapeOptions: {
+                                        color: '#97009c',
+                                        weight: 4
+                                    }
+                                },
+                                rectangle: {
+                                    shapeOptions: {
+                                        color: '#97009c',
+                                        weight: 4
+                                    }
+                                },
+                                circle: {
+                                    shapeOptions: {
+                                        color: '#97009c',
+                                        weight: 4
+                                    }
+                                },
+                                polyline: false,
+                                marker: false,
+                                circlemarker: false
+                            },
+                            edit: {
+                                featureGroup: drawnItems,
+                                remove: true,
+                                edit: true
+                            }
+                        });
+                        map.addControl(drawControl);
+
+                        // Handle drawing events
+                        map.on(L.Draw.Event.CREATED, function(e) {
+                            const layer = e.layer;
+                            drawnItems.addLayer(layer);
+                            selectFeaturesInDrawnArea(layer);
+                            updateStatus(`Selected ${selectedFeatures.length} features in drawn area`);
+                        });
+
+                        map.on(L.Draw.Event.DELETED, function(e) {
+                            selectedFeatures = [];
+                            updateSummary();
+                            resetHighlight();
+                            updateStatus('Drawn selections cleared');
+                        });
+
+                        map.on(L.Draw.Event.EDITED, function(e) {
+                            // Reselect features for all edited shapes
+                            selectedFeatures = [];
+                            drawnItems.eachLayer(function(layer) {
+                                selectFeaturesInDrawnArea(layer);
+                            });
+                            updateStatus(`Updated selection: ${selectedFeatures.length} features`);
+                        });
+                        
+                        console.log('Leaflet Draw tools loaded successfully');
+                        updateStatus('Drawing tools ready - use toolbar in top-right corner');
+                        
+                    } catch (error) {
+                        console.error('Error setting up draw controls after loading:', error);
+                        setupSimpleSelection();
                     }
-                });
-                map.addControl(drawControl);
-
-                // Handle drawing events
-                map.on(L.Draw.Event.CREATED, function(e) {
-                    const layer = e.layer;
-                    drawnItems.addLayer(layer);
-                    selectFeaturesInDrawnArea(layer);
-                });
-
-                map.on(L.Draw.Event.DELETED, function(e) {
-                    selectedFeatures = [];
-                    updateSummary();
-                    resetHighlight();
-                });
-                
-                console.log('Leaflet Draw tools loaded');
-                updateStatus('Drawing tools loaded');
-                
-            } catch (error) {
-                console.error('Error setting up draw controls:', error);
-                setupSimpleSelection();
-            }
+                } else {
+                    console.warn('Leaflet Draw failed to load, using simple selection');
+                    setupSimpleSelection();
+                }
+            });
         }
 
         // Fallback: Simple click selection if draw tools fail
@@ -694,26 +717,24 @@
                 opacity: 0.8
             });
             
-            // Add ONLY to drawn items for proper cleanup
+            // Add to drawnItems for proper cleanup
             if (drawnItems) {
                 drawnItems.addLayer(bufferCircle);
             } else {
                 // Fallback: add directly to map if drawnItems not available
                 bufferCircle.addTo(map);
-                // Store reference for manual cleanup
                 window.lastBufferCircle = bufferCircle;
             }
             
-            // Select features within buffer
-            selectFeaturesInBuffer(latlng, bufferRadius / 69); // Convert miles to degrees
+            // Select features within buffer using proper distance calculation
+            selectFeaturesInBuffer(latlng, bufferRadius);
             
-            // Keep buffer mode active (don't auto-exit)
             updateStatus(`Selected ${selectedFeatures.length} areas within ${bufferRadius} miles`);
         }
 
-        // Select features within buffer radius
-        function selectFeaturesInBuffer(centerPoint, radiusInDegrees) {
-            console.log(`Checking features within ${radiusInDegrees.toFixed(4)} degrees of`, centerPoint);
+        // Select features within buffer radius using proper distance calculation
+        function selectFeaturesInBuffer(centerPoint, radiusInMiles) {
+            console.log(`Checking features within ${radiusInMiles} miles of`, centerPoint);
             selectedFeatures = [];
             
             if (!geoJsonLayer) {
@@ -728,7 +749,7 @@
                 const feature = layer.feature;
                 checkedCount++;
                 
-                if (isFeatureInBuffer(feature, centerPoint, radiusInDegrees)) {
+                if (isFeatureInBufferMiles(feature, centerPoint, radiusInMiles)) {
                     selectedFeatures.push({feature: feature, layer: layer});
                     layer.setStyle(highlightStyle(feature));
                     selectedCount++;
@@ -742,59 +763,66 @@
             updateSummary();
         }
 
-        // Check if feature is within buffer radius (improved algorithm)
-        function isFeatureInBuffer(feature, centerPoint, radiusInDegrees) {
+        // Check if feature is within buffer radius using Haversine formula for WGS 84
+        function isFeatureInBufferMiles(feature, centerPoint, radiusInMiles) {
             if (!feature.geometry || !feature.geometry.coordinates) {
-                console.warn('Feature missing geometry');
                 return false;
             }
             
             try {
                 if (feature.geometry.type === 'Polygon') {
-                    // Get the polygon coordinates
                     const coords = feature.geometry.coordinates[0];
                     
-                    // Check if the polygon center or any vertex is within the buffer
-                    let minDistance = Infinity;
-                    let totalLat = 0, totalLng = 0;
+                    // Calculate polygon centroid
+                    let totalLat = 0, totalLng = 0, validPoints = 0;
+                    for (let i = 0; i < coords.length - 1; i++) {
+                        totalLat += coords[i][1];
+                        totalLng += coords[i][0];
+                        validPoints++;
+                    }
                     
-                    // Calculate polygon centroid and check all vertices
-                    for (let i = 0; i < coords.length - 1; i++) { // -1 to skip duplicate last point
-                        const pointLng = coords[i][0];
-                        const pointLat = coords[i][1];
-                        
-                        totalLat += pointLat;
-                        totalLng += pointLng;
-                        
-                        // Calculate distance from center point to this vertex
-                        const distance = Math.sqrt(
-                            Math.pow(pointLat - centerPoint.lat, 2) + 
-                            Math.pow(pointLng - centerPoint.lng, 2)
+                    if (validPoints === 0) return false;
+                    
+                    const centroidLat = totalLat / validPoints;
+                    const centroidLng = totalLng / validPoints;
+                    
+                    // Calculate distance using Haversine formula
+                    const distance = calculateDistance(
+                        centerPoint.lat, centerPoint.lng,
+                        centroidLat, centroidLng
+                    );
+                    
+                    // Also check if any vertex is within radius for edge cases
+                    let hasVertexInRadius = false;
+                    for (let i = 0; i < coords.length - 1 && !hasVertexInRadius; i++) {
+                        const vertexDistance = calculateDistance(
+                            centerPoint.lat, centerPoint.lng,
+                            coords[i][1], coords[i][0]
                         );
-                        
-                        minDistance = Math.min(minDistance, distance);
-                        
-                        // If any vertex is within radius, include the polygon
-                        if (distance <= radiusInDegrees) {
-                            return true;
+                        if (vertexDistance <= radiusInMiles) {
+                            hasVertexInRadius = true;
                         }
                     }
                     
-                    // Also check if polygon centroid is within radius
-                    const centroidLat = totalLat / (coords.length - 1);
-                    const centroidLng = totalLng / (coords.length - 1);
-                    const centroidDistance = Math.sqrt(
-                        Math.pow(centroidLat - centerPoint.lat, 2) + 
-                        Math.pow(centroidLng - centerPoint.lng, 2)
-                    );
-                    
-                    return centroidDistance <= radiusInDegrees;
+                    return distance <= radiusInMiles || hasVertexInRadius;
                 }
                 return false;
             } catch (e) {
                 console.error('Error in buffer check for feature:', feature.properties.County, e);
                 return false;
             }
+        }
+
+        // Calculate distance between two points using Haversine formula (returns miles)
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 3959; // Earth's radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
 
         // Setup county filter
@@ -902,7 +930,7 @@
             }
         }
 
-        // Create dummy data - more robust and visible
+        // Create dummy data - using proper percentage format (decimal values)
         function useDummyData() {
             try {
                 console.log('Creating visible dummy data...');
@@ -910,6 +938,7 @@
                 
                 const features = [];
                 const counties = ["Jefferson", "Harris", "Dallas", "Travis", "Bexar", "Williamson", "Collin", "Fort Bend", "Denton", "Hays", "Brazoria", "Galveston", "Montgomery", "Tarrant", "Bell", "Parker", "Ellis", "Johnson", "Kaufman", "Henderson"];
+                // Percentages already in decimal format (.65 = 65%, .32 = 32%)
                 const demPercentages = [0.65, 0.672, 0.729, 0.734, 0.671, 0.58, 0.576, 0.573, 0.573, 0.56, 0.49, 0.491, 0.404, 0.446, 0.457, 0.257, 0.302, 0.295, 0.282, 0.274];
                 
                 let id = 1;
@@ -923,7 +952,7 @@
                         const size = 0.8; // Smaller squares with gaps
                         
                         const county = counties[id - 1];
-                        const demPct = demPercentages[id - 1];
+                        const demPct = demPercentages[id - 1]; // Already in decimal format
                         const dem = Math.round(500 + demPct * 1000);
                         const rep = Math.round(1500 - dem);
                         
@@ -943,7 +972,7 @@
                                 "Dem": dem,
                                 "Rep": rep,
                                 "Total": dem + rep,
-                                "Dem_pct": demPct,
+                                "Dem_pct": demPct, // Decimal format (.65 = 65%)
                                 "Rep_pct": (1 - demPct),
                                 "White_Vap_pct": 0.3 + Math.random() * 0.5,
                                 "Black_Vap_pct": Math.random() * 0.4,
@@ -1092,16 +1121,16 @@
             console.log(`Filters applied: ${visibleCount}/${totalCount} features visible`);
         }
 
-        // Color coding - handle decimal percentages (0.65 = 65%)
+        // Color coding - Dem_pct is already in percentage format (.60 = 60%)
         function getColor(demPct) {
-            const pct = (parseFloat(demPct) || 0) * 100; // Convert decimal to percentage
-            console.log('Coloring polygon with Dem_pct:', demPct, '→', pct + '%');
+            const pct = parseFloat(demPct) || 0; // No conversion needed - already in decimal
+            console.log('Coloring polygon with Dem_pct:', demPct, '→', (pct * 100).toFixed(1) + '%');
             
-            if (pct < 20) return '#8b0000';      // Dark red
-            if (pct < 40) return '#dc143c';      // Medium red
-            if (pct < 49) return '#ff6b6b';      // Light red
-            if (pct < 60) return '#4dabf7';      // Light blue
-            return '#1864ab';                    // Dark blue
+            if (pct < 0.20) return '#8b0000';      // Dark red (< 20%)
+            if (pct < 0.40) return '#dc143c';      // Medium red (20-40%)
+            if (pct < 0.49) return '#ff6b6b';      // Light red (40-49%)
+            if (pct < 0.60) return '#4dabf7';      // Light blue (49-60%)
+            return '#1864ab';                      // Dark blue (60%+)
         }
 
         // Style polygons
@@ -1136,12 +1165,12 @@
                 style: style,
                 onEachFeature: function(feature, layer) {
                     const props = feature.properties;
-                    const demPct = (parseFloat(props.Dem_pct) || 0) * 100; // Convert to percentage for display
+                    const demPct = parseFloat(props.Dem_pct) || 0; // Already in decimal format
                     
                     layer.bindTooltip(`
                         <strong>County:</strong> ${props.County || 'N/A'}<br>
                         <strong>VTD:</strong> ${props.VTD || 'N/A'}<br>
-                        <strong>Dem %:</strong> ${demPct.toFixed(1)}%
+                        <strong>Dem %:</strong> ${(demPct * 100).toFixed(1)}%
                     `);
 
                     layer.on('click', function(e) {
