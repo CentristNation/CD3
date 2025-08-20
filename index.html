@@ -328,94 +328,175 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Starting application...');
-            initMap();
+            
+            // Force show interface immediately
+            setTimeout(() => {
+                updateStatus('🔄 Initializing map and interface...');
+            }, 100);
+            
+            // Initialize map after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                initMap();
+            }, 300);
+            
+            // Force load dummy data as backup after 3 seconds if nothing else worked
+            setTimeout(() => {
+                if (!originalData) {
+                    console.log('🔧 Emergency fallback: forcing dummy data load');
+                    updateStatus('🔧 Fallback: Loading test data...');
+                    useDummyData();
+                }
+            }, 3000);
         });
 
-        // Initialize map
+        // Initialize map with better error handling
         function initMap() {
-            console.log('🗺️ Initializing map...');
-            
-            map = L.map('map').setView([32.0, -97.0], 6);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            try {
+                console.log('🗺️ Initializing map...');
+                updateStatus('🗺️ Setting up map...');
+                
+                map = L.map('map').setView([32.0, -97.0], 6);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
 
-            setupDrawingControls();
-            loadGeoJSONFromFile();
-            
-            console.log('✅ Map initialized');
+                console.log('✅ Base map loaded');
+                updateStatus('✅ Map ready, loading data...');
+                
+                // Setup drawing controls
+                setupDrawingControls();
+                
+                // Load data
+                loadGeoJSONFromFile();
+                
+                console.log('✅ Map initialization complete');
+                
+            } catch (error) {
+                console.error('❌ Error initializing map:', error);
+                updateStatus('❌ Error initializing map: ' + error.message);
+                
+                // Even if map fails, try to force dummy data
+                setTimeout(() => {
+                    updateStatus('🔧 Attempting emergency data load...');
+                    useDummyData();
+                }, 2000);
+            }
         }
 
-        // Setup Leaflet Draw controls
+        // Setup Leaflet Draw controls with fallback
         function setupDrawingControls() {
-            drawnItems = new L.FeatureGroup();
-            map.addLayer(drawnItems);
-
-            const drawControl = new L.Control.Draw({
-                position: 'topright',
-                draw: {
-                    polygon: true,
-                    rectangle: true,
-                    circle: true,
-                    polyline: false,
-                    marker: false,
-                    circlemarker: false
-                },
-                edit: {
-                    featureGroup: drawnItems,
-                    remove: true
+            try {
+                // Check if L.Draw is available
+                if (typeof L.Draw === 'undefined') {
+                    console.warn('⚠️ Leaflet Draw not available, using simple selection');
+                    setupSimpleSelection();
+                    return;
                 }
-            });
-            map.addControl(drawControl);
+                
+                drawnItems = new L.FeatureGroup();
+                map.addLayer(drawnItems);
 
-            // Handle drawing events
-            map.on(L.Draw.Event.CREATED, function(e) {
-                const layer = e.layer;
-                drawnItems.addLayer(layer);
-                selectFeaturesInDrawnArea(layer);
-            });
+                const drawControl = new L.Control.Draw({
+                    position: 'topright',
+                    draw: {
+                        polygon: true,
+                        rectangle: true,
+                        circle: true,
+                        polyline: false,
+                        marker: false,
+                        circlemarker: false
+                    },
+                    edit: {
+                        featureGroup: drawnItems,
+                        remove: true
+                    }
+                });
+                map.addControl(drawControl);
 
-            map.on(L.Draw.Event.DELETED, function(e) {
-                selectedFeatures = [];
-                updateSummary();
-                resetHighlight();
-            });
+                // Handle drawing events
+                map.on(L.Draw.Event.CREATED, function(e) {
+                    const layer = e.layer;
+                    drawnItems.addLayer(layer);
+                    selectFeaturesInDrawnArea(layer);
+                });
+
+                map.on(L.Draw.Event.DELETED, function(e) {
+                    selectedFeatures = [];
+                    updateSummary();
+                    resetHighlight();
+                });
+                
+                console.log('✅ Leaflet Draw tools loaded');
+                updateStatus('✅ Drawing tools loaded');
+                
+            } catch (error) {
+                console.error('❌ Error setting up draw controls:', error);
+                setupSimpleSelection();
+            }
         }
 
-        // Remove old rectangle functions and replace with draw selection
-        function toggleRectangleMode() {
-            // This is now handled by Leaflet Draw - remove custom implementation
-            updateStatus('ℹ️ Use the drawing tools in the top-right corner of the map');
+        // Fallback: Simple click selection if draw tools fail
+        function setupSimpleSelection() {
+            console.log('🔧 Setting up simple click selection as fallback');
+            updateStatus('ℹ️ Click polygons to select them');
+            
+            // Update the selection section to show available tools
+            const selectionSection = document.getElementById('selectionSection');
+            if (selectionSection) {
+                selectionSection.innerHTML = `
+                    <div class="section-title">🎯 Selection Tools</div>
+                    <div class="selection-tools">
+                        <button class="tool-button" onclick="clearAllSelections()">🗑️ Clear All</button>
+                        <div class="mode-info">Click individual polygons to select them</div>
+                    </div>
+                `;
+            }
         }
 
+        // Clear selections - works with both draw tools and simple selection
         function clearAllSelections() {
+            console.log('🗑️ Clearing all selections...');
             selectedFeatures = [];
-            drawnItems.clearLayers();
+            
+            // Clear drawn items if draw tools are available
+            if (drawnItems) {
+                drawnItems.clearLayers();
+            }
+            
             resetHighlight();
             updateSummary();
+            updateStatus('✅ Selections cleared');
         }
 
-        // Load GeoJSON data
+        // Load GeoJSON data with better error handling
         async function loadGeoJSONFromFile() {
             console.log('📁 Attempting to load prop3.geojson...');
-            updateStatus('🔄 Loading prop3.geojson...');
+            updateStatus('🔄 Looking for prop3.geojson...');
             
             try {
                 const response = await fetch('prop3.geojson');
                 if (response.ok) {
                     const geojson = await response.json();
-                    console.log('✅ Loaded external file');
-                    updateStatus('✅ Loaded prop3.geojson');
+                    console.log('✅ Loaded external file with', geojson.features?.length, 'features');
+                    updateStatus('✅ Loaded prop3.geojson successfully!');
                     processGeoJSON(geojson);
                     return;
+                } else {
+                    console.log('⚠️ prop3.geojson returned', response.status);
                 }
             } catch (error) {
-                console.log('⚠️ External file not found, using dummy data');
+                console.log('⚠️ Could not load prop3.geojson:', error.message);
             }
             
-            updateStatus('🧪 Using dummy data for testing');
-            setTimeout(() => useDummyData(), 500);
+            // Always fall back to dummy data
+            console.log('🧪 Loading dummy data for testing...');
+            updateStatus('🧪 Loading test data (prop3.geojson not found)...');
+            
+            // Small delay to show the message
+            setTimeout(() => {
+                useDummyData();
+            }, 500);
         }
 
         // Update status message
@@ -426,79 +507,129 @@
             }
         }
 
-        // Create dummy data - use decimal format for percentages
+        // Create dummy data - more robust and visible
         function useDummyData() {
-            console.log('🧪 Creating dummy data with decimal percentages...');
-            
-            const features = [];
-            const counties = ["Jefferson", "Harris", "Dallas", "Travis", "Bexar", "Williamson", "Collin", "Fort Bend", "Denton", "Hays", "Brazoria", "Galveston", "Montgomery", "Tarrant", "Bell", "Parker", "Ellis", "Johnson", "Kaufman", "Henderson"];
-            const demPercentages = [0.65, 0.672, 0.729, 0.734, 0.671, 0.58, 0.576, 0.573, 0.573, 0.56, 0.49, 0.491, 0.404, 0.446, 0.457, 0.257, 0.302, 0.295, 0.282, 0.274]; // Decimal format!
-            
-            let id = 1;
-            for (let row = 0; row < 4; row++) {
-                for (let col = 0; col < 5; col++) {
-                    if (id > 20) break;
-                    
-                    const lng = -99.0 + (col * 1.0);
-                    const lat = 29.0 + (row * 1.0);
-                    const county = counties[id - 1];
-                    const demPct = demPercentages[id - 1];
-                    const dem = Math.round(500 + demPct * 1000);
-                    const rep = Math.round(1000 - dem);
-                    
-                    const coordinates = [[
-                        [lng, lat],
-                        [lng + 1.0, lat],
-                        [lng + 1.0, lat + 1.0],
-                        [lng, lat + 1.0],
-                        [lng, lat]
-                    ]];
-                    
-                    features.push({
-                        "type": "Feature",
-                        "properties": {
-                            "County": county,
-                            "VTD": String(id).padStart(3, '0'),
-                            "Dem": dem,
-                            "Rep": rep,
-                            "Total": dem + rep,
-                            "Dem_pct": demPct,  // Decimal format: 0.65 = 65%
-                            "Rep_pct": (1 - demPct), // Complement as decimal
-                            "White_Vap_pct": 0.5 + Math.random() * 0.3,  // Decimal format
-                            "Black_Vap_pct": Math.random() * 0.25,
-                            "Asian_Vap_pct": Math.random() * 0.15,
-                            "Hispanic_Vap_pct": Math.random() * 0.35,
-                            "vap": Math.round((dem + rep) * 1.2),
-                            "anglovap": Math.round((dem + rep) * 0.6),
-                            "blackvap": Math.round((dem + rep) * 0.15),
-                            "hispvap": Math.round((dem + rep) * 0.2),
-                            "asianvap": Math.round((dem + rep) * 0.05)
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": coordinates
-                        }
-                    });
-                    
-                    console.log(`Created ${county}: Dem_pct=${demPct} (${(demPct*100).toFixed(1)}%)`);
-                    id++;
+            try {
+                console.log('🧪 Creating visible dummy data...');
+                updateStatus('🧪 Creating 20 test districts...');
+                
+                const features = [];
+                const counties = ["Jefferson", "Harris", "Dallas", "Travis", "Bexar", "Williamson", "Collin", "Fort Bend", "Denton", "Hays", "Brazoria", "Galveston", "Montgomery", "Tarrant", "Bell", "Parker", "Ellis", "Johnson", "Kaufman", "Henderson"];
+                const demPercentages = [0.65, 0.672, 0.729, 0.734, 0.671, 0.58, 0.576, 0.573, 0.573, 0.56, 0.49, 0.491, 0.404, 0.446, 0.457, 0.257, 0.302, 0.295, 0.282, 0.274];
+                
+                let id = 1;
+                for (let row = 0; row < 4; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        if (id > 20) break;
+                        
+                        // Create large, well-spaced squares across Texas
+                        const lng = -99.0 + (col * 1.2); // More spacing
+                        const lat = 29.0 + (row * 1.2);
+                        const size = 0.8; // Smaller squares with gaps
+                        
+                        const county = counties[id - 1];
+                        const demPct = demPercentages[id - 1];
+                        const dem = Math.round(500 + demPct * 1000);
+                        const rep = Math.round(1500 - dem);
+                        
+                        const coordinates = [[
+                            [lng, lat],
+                            [lng + size, lat],
+                            [lng + size, lat + size],
+                            [lng, lat + size],
+                            [lng, lat]
+                        ]];
+                        
+                        const feature = {
+                            "type": "Feature",
+                            "properties": {
+                                "County": county,
+                                "VTD": String(id).padStart(3, '0'),
+                                "Dem": dem,
+                                "Rep": rep,
+                                "Total": dem + rep,
+                                "Dem_pct": demPct,
+                                "Rep_pct": (1 - demPct),
+                                "White_Vap_pct": 0.3 + Math.random() * 0.5,
+                                "Black_Vap_pct": Math.random() * 0.4,
+                                "Asian_Vap_pct": Math.random() * 0.2,
+                                "Hispanic_Vap_pct": Math.random() * 0.5,
+                                "vap": Math.round((dem + rep) * 1.2),
+                                "anglovap": Math.round((dem + rep) * 0.6),
+                                "blackvap": Math.round((dem + rep) * 0.15),
+                                "hispvap": Math.round((dem + rep) * 0.2),
+                                "asianvap": Math.round((dem + rep) * 0.05)
+                            },
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": coordinates
+                            }
+                        };
+                        
+                        features.push(feature);
+                        const pctDisplay = (demPct * 100).toFixed(1);
+                        console.log(`✅ ${county}: ${pctDisplay}% Dem (${demPct < 0.5 ? 'RED' : 'BLUE'})`);
+                        id++;
+                    }
                 }
+                
+                const dummyData = {
+                    "type": "FeatureCollection", 
+                    "features": features
+                };
+                
+                console.log('✅ Created', features.length, 'test districts');
+                console.log('Expected colors: RED (Parker 26%), BLUE (Travis 73%)');
+                
+                processGeoJSON(dummyData);
+                
+            } catch (error) {
+                console.error('❌ Error creating dummy data:', error);
+                updateStatus('❌ Error creating test data: ' + error.message);
             }
-            
-            console.log('✅ Created', features.length, 'dummy features with decimal percentages');
-            processGeoJSON({"type": "FeatureCollection", "features": features});
         }
 
-        // Process GeoJSON data
+        // Process GeoJSON data with robust error handling
         function processGeoJSON(geojson) {
-            console.log('🔄 Processing data...');
-            originalData = geojson;
-            
-            setupFilters();
-            loadGeoJSON(geojson);
-            updateStatus('✅ Ready - ' + geojson.features.length + ' districts loaded');
-            
-            console.log('✅ Processing complete');
+            try {
+                console.log('🔄 Processing GeoJSON data...');
+                
+                if (!geojson || !geojson.features || geojson.features.length === 0) {
+                    throw new Error('Invalid or empty GeoJSON data');
+                }
+                
+                originalData = geojson;
+                console.log('✅ Data stored:', geojson.features.length, 'features');
+                
+                // Setup filters first
+                setupFilters();
+                console.log('✅ Filters configured');
+                
+                // Load onto map
+                loadGeoJSON(geojson);
+                console.log('✅ Map loaded');
+                
+                // Update status
+                const featureCount = geojson.features.length;
+                updateStatus(`✅ Ready! ${featureCount} districts loaded. ${typeof L.Draw !== 'undefined' ? 'Use drawing tools in top-right.' : 'Click polygons to select.'}`);
+                
+                // Force a sample color check
+                const sampleFeature = geojson.features[0];
+                const sampleDemPct = sampleFeature.properties.Dem_pct;
+                const sampleColor = getColor(sampleDemPct);
+                console.log(`🎨 Sample: ${sampleFeature.properties.County} = ${(sampleDemPct*100).toFixed(1)}% Dem → ${sampleColor}`);
+                
+                console.log('✅ GeoJSON processing completed successfully');
+                
+            } catch (error) {
+                console.error('❌ Error processing GeoJSON:', error);
+                updateStatus('❌ Error processing data: ' + error.message);
+                
+                // Try to still show the interface
+                setTimeout(() => {
+                    updateStatus('ℹ️ Interface ready, but data failed to load');
+                }, 1000);
+            }
         }
 
         // Setup filter sliders
