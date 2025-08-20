@@ -1,4 +1,25 @@
-<!DOCTYPE html>
+        // Test function to verify buffer functionality
+        function testBufferTool() {
+            console.log('🧪 Testing buffer tool...');
+            const bufferBtn = document.getElementById('bufferBtn');
+            const bufferControls = document.getElementById('bufferControls');
+            
+            if (bufferBtn) {
+                console.log('✅ Buffer button found, testing click...');
+                // Force show buffer controls for testing
+                if (bufferControls) {
+                    bufferControls.style.display = 'flex';
+                    console.log('✅ Buffer controls forced visible');
+                }
+                
+                // Test the toggle function
+                console.log('Current buffer mode:', isBufferMode);
+                toggleBufferMode();
+                console.log('Buffer mode after toggle:', isBufferMode);
+            } else {
+                console.error('❌ Buffer button not found for testing');
+            }
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -20,7 +41,7 @@
         }
         
         .sidebar {
-            width: 300px;
+            width: 320px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-right: 1px solid rgba(255, 255, 255, 0.2);
@@ -213,6 +234,76 @@
             color: #666;
             text-align: center;
         }
+        
+        .county-filter {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            background: white;
+        }
+        
+        .county-item {
+            display: flex;
+            align-items: center;
+            margin: 3px 0;
+            font-size: 11px;
+        }
+        
+        .county-checkbox {
+            margin-right: 6px;
+        }
+        
+        .county-controls {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        
+        .county-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        
+        .county-btn:hover {
+            background: #5a6268;
+        }
+        
+        .buffer-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .buffer-input {
+            flex: 1;
+        }
+        
+        .buffer-value {
+            font-size: 11px;
+            color: #666;
+            min-width: 60px;
+        }
+        
+        .buffer-active {
+            background: #28a745 !important;
+            color: white !important;
+        }
+        
+        .buffer-active:hover {
+            background: #218838 !important;
+        }
     </style>
 </head>
 <body>
@@ -230,8 +321,24 @@
             <div class="section" id="selectionSection">
                 <div class="section-title">🎯 Selection Tools</div>
                 <div class="selection-tools">
+                    <button class="tool-button" id="bufferBtn" onclick="toggleBufferMode()">📍 Buffer Select</button>
                     <button class="tool-button" id="clearSelection" onclick="clearAllSelections()">🗑️ Clear All</button>
-                    <div class="mode-info">Use drawing tools in top-right corner of map</div>
+                    <div class="mode-info" id="modeInfo">Use drawing tools in top-right corner of map</div>
+                    <div class="buffer-controls" id="bufferControls" style="display: none;">
+                        <input type="range" class="buffer-input" id="bufferRange" min="1" max="50" value="10">
+                        <div class="buffer-value" id="bufferValue">10 miles</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section" id="countySection">
+                <div class="section-title">🏛️ County Filter</div>
+                <div class="county-controls">
+                    <button class="county-btn" onclick="selectAllCounties()">All</button>
+                    <button class="county-btn" onclick="selectNoCounties()">None</button>
+                </div>
+                <div class="county-filter" id="countyFilter">
+                    <div style="text-align: center; color: #666; font-size: 11px;">Loading counties...</div>
                 </div>
             </div>
             
@@ -324,10 +431,38 @@
         let map, geoJsonLayer, selectedFeatures = [];
         let originalData = null;
         let drawnItems = null;
+        let isBufferMode = false;
+        let selectedCounties = new Set();
+        let bufferRadius = 10; // miles
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Starting application...');
+            
+            // Debug: Check if buffer elements exist
+            setTimeout(() => {
+                const bufferBtn = document.getElementById('bufferBtn');
+                const bufferControls = document.getElementById('bufferControls');
+                const bufferRange = document.getElementById('bufferRange');
+                
+                console.log('🔍 Buffer elements check:');
+                console.log('- Buffer button:', bufferBtn ? '✅ Found' : '❌ Missing');
+                console.log('- Buffer controls:', bufferControls ? '✅ Found' : '❌ Missing');
+                console.log('- Buffer range:', bufferRange ? '✅ Found' : '❌ Missing');
+                
+                if (bufferBtn) {
+                    console.log('✅ Buffer tool should be visible in sidebar');
+                    // Make sure it's visible
+                    bufferBtn.style.display = 'inline-block';
+                    bufferBtn.style.visibility = 'visible';
+                } else {
+                    console.error('❌ Buffer button not found in DOM');
+                }
+                
+                if (bufferControls) {
+                    bufferControls.style.visibility = 'visible';
+                }
+            }, 1000);
             
             // Force show interface immediately
             setTimeout(() => {
@@ -361,11 +496,23 @@
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
 
+                // Setup buffer selection click handler
+                map.on('click', function(e) {
+                    console.log('🖱️ Map clicked at:', e.latlng, 'Buffer mode:', isBufferMode);
+                    if (isBufferMode) {
+                        console.log('📍 Creating buffer selection...');
+                        createBufferSelection(e.latlng);
+                    }
+                });
+
                 console.log('✅ Base map loaded');
                 updateStatus('✅ Map ready, loading data...');
                 
                 // Setup drawing controls
                 setupDrawingControls();
+                
+                // Always setup buffer controls regardless of draw tools
+                setupBufferControls();
                 
                 // Load data
                 loadGeoJSONFromFile();
@@ -439,19 +586,16 @@
         // Fallback: Simple click selection if draw tools fail
         function setupSimpleSelection() {
             console.log('🔧 Setting up simple click selection as fallback');
-            updateStatus('ℹ️ Click polygons to select them');
+            updateStatus('ℹ️ Click polygons to select them, or use buffer selection');
             
-            // Update the selection section to show available tools
-            const selectionSection = document.getElementById('selectionSection');
-            if (selectionSection) {
-                selectionSection.innerHTML = `
-                    <div class="section-title">🎯 Selection Tools</div>
-                    <div class="selection-tools">
-                        <button class="tool-button" onclick="clearAllSelections()">🗑️ Clear All</button>
-                        <div class="mode-info">Click individual polygons to select them</div>
-                    </div>
-                `;
+            // Update only the mode info, keep the buffer tool
+            const modeInfo = document.getElementById('modeInfo');
+            if (modeInfo) {
+                modeInfo.textContent = 'Click individual polygons to select them';
             }
+            
+            // Keep the buffer tool visible and functional
+            console.log('✅ Buffer tool preserved in fallback mode');
         }
 
         // Clear selections - works with both draw tools and simple selection
@@ -464,9 +608,273 @@
                 drawnItems.clearLayers();
             }
             
+            // Exit buffer mode
+            if (isBufferMode) {
+                toggleBufferMode();
+            }
+            
             resetHighlight();
             updateSummary();
             updateStatus('✅ Selections cleared');
+        }
+
+        // Setup buffer controls
+        function setupBufferControls() {
+            console.log('🔧 Setting up buffer controls...');
+            
+            const bufferRange = document.getElementById('bufferRange');
+            const bufferValue = document.getElementById('bufferValue');
+            const bufferBtn = document.getElementById('bufferBtn');
+            
+            console.log('Buffer elements found:', {
+                range: !!bufferRange,
+                value: !!bufferValue, 
+                button: !!bufferBtn
+            });
+            
+            if (bufferRange && bufferValue) {
+                bufferRange.addEventListener('input', function() {
+                    bufferRadius = parseInt(this.value);
+                    bufferValue.textContent = bufferRadius + ' miles';
+                    console.log('🎚️ Buffer radius changed to:', bufferRadius, 'miles');
+                });
+                
+                // Set initial value
+                bufferValue.textContent = bufferRadius + ' miles';
+                console.log('✅ Buffer controls initialized');
+            } else {
+                console.error('❌ Buffer controls not found in DOM');
+            }
+            
+            // Ensure buffer button is visible and functional
+            if (bufferBtn) {
+                bufferBtn.style.display = 'inline-block';
+                console.log('✅ Buffer button made visible');
+            }
+        }
+
+        // Toggle buffer selection mode
+        function toggleBufferMode() {
+            isBufferMode = !isBufferMode;
+            const bufferBtn = document.getElementById('bufferBtn');
+            const bufferControls = document.getElementById('bufferControls');
+            const modeInfo = document.getElementById('modeInfo');
+            
+            console.log('🔄 Buffer mode toggled:', isBufferMode);
+            
+            if (isBufferMode) {
+                bufferBtn.classList.add('buffer-active');
+                bufferBtn.textContent = '✋ Exit Buffer Mode';
+                bufferControls.style.display = 'flex';
+                modeInfo.textContent = `Click map to select areas within ${bufferRadius} mile radius`;
+                map.getContainer().style.cursor = 'crosshair';
+                updateStatus(`📍 Buffer mode active - Click map to select within ${bufferRadius} miles`);
+                
+                // Make sure buffer controls are visible
+                const bufferRange = document.getElementById('bufferRange');
+                const bufferValue = document.getElementById('bufferValue');
+                if (bufferRange && bufferValue) {
+                    bufferValue.textContent = bufferRadius + ' miles';
+                    console.log('✅ Buffer controls visible');
+                }
+            } else {
+                bufferBtn.classList.remove('buffer-active');
+                bufferBtn.textContent = '📍 Buffer Select';
+                bufferControls.style.display = 'none';
+                modeInfo.textContent = 'Use drawing tools in top-right corner of map';
+                map.getContainer().style.cursor = '';
+                updateStatus('ℹ️ Buffer mode disabled');
+            }
+        }
+
+        // Create buffer selection around a point
+        function createBufferSelection(latlng) {
+            console.log(`🎯 Creating ${bufferRadius} mile buffer at`, latlng);
+            
+            // Clear any existing selection highlights first
+            resetHighlight();
+            
+            // Remove any existing buffer circles
+            if (drawnItems) {
+                drawnItems.clearLayers();
+            }
+            
+            // Create a visible circle to show the buffer area
+            const bufferCircle = L.circle(latlng, {
+                radius: bufferRadius * 1609.34, // Convert miles to meters for Leaflet circle
+                color: '#ff7800',
+                fillColor: '#ff7800',
+                fillOpacity: 0.3,
+                weight: 3,
+                opacity: 0.8
+            });
+            
+            // Add to map immediately
+            bufferCircle.addTo(map);
+            
+            // Add to drawn items for cleanup
+            if (drawnItems) {
+                drawnItems.addLayer(bufferCircle);
+            }
+            
+            // Select features within buffer
+            selectFeaturesInBuffer(latlng, bufferRadius / 69); // Convert miles to degrees
+            
+            // Keep buffer mode active (don't auto-exit)
+            updateStatus(`📍 Selected ${selectedFeatures.length} areas within ${bufferRadius} miles`);
+        }
+
+        // Select features within buffer radius
+        function selectFeaturesInBuffer(centerPoint, radiusInDegrees) {
+            console.log(`🔍 Checking features within ${radiusInDegrees.toFixed(4)} degrees of`, centerPoint);
+            selectedFeatures = [];
+            
+            if (!geoJsonLayer) {
+                console.warn('No geoJsonLayer available for buffer selection');
+                return;
+            }
+
+            let checkedCount = 0;
+            let selectedCount = 0;
+
+            geoJsonLayer.eachLayer(function(layer) {
+                const feature = layer.feature;
+                checkedCount++;
+                
+                if (isFeatureInBuffer(feature, centerPoint, radiusInDegrees)) {
+                    selectedFeatures.push({feature: feature, layer: layer});
+                    layer.setStyle(highlightStyle(feature));
+                    selectedCount++;
+                    console.log(`✅ Selected: ${feature.properties.County} (${feature.properties.VTD})`);
+                } else {
+                    layer.setStyle(style(feature));
+                }
+            });
+            
+            console.log(`📍 Buffer selection complete: ${selectedCount}/${checkedCount} features selected`);
+            updateSummary();
+        }
+
+        // Check if feature is within buffer radius (improved algorithm)
+        function isFeatureInBuffer(feature, centerPoint, radiusInDegrees) {
+            if (!feature.geometry || !feature.geometry.coordinates) {
+                console.warn('Feature missing geometry');
+                return false;
+            }
+            
+            try {
+                if (feature.geometry.type === 'Polygon') {
+                    // Get the polygon coordinates
+                    const coords = feature.geometry.coordinates[0];
+                    
+                    // Check if the polygon center or any vertex is within the buffer
+                    let minDistance = Infinity;
+                    let totalLat = 0, totalLng = 0;
+                    
+                    // Calculate polygon centroid and check all vertices
+                    for (let i = 0; i < coords.length - 1; i++) { // -1 to skip duplicate last point
+                        const pointLng = coords[i][0];
+                        const pointLat = coords[i][1];
+                        
+                        totalLat += pointLat;
+                        totalLng += pointLng;
+                        
+                        // Calculate distance from center point to this vertex
+                        const distance = Math.sqrt(
+                            Math.pow(pointLat - centerPoint.lat, 2) + 
+                            Math.pow(pointLng - centerPoint.lng, 2)
+                        );
+                        
+                        minDistance = Math.min(minDistance, distance);
+                        
+                        // If any vertex is within radius, include the polygon
+                        if (distance <= radiusInDegrees) {
+                            return true;
+                        }
+                    }
+                    
+                    // Also check if polygon centroid is within radius
+                    const centroidLat = totalLat / (coords.length - 1);
+                    const centroidLng = totalLng / (coords.length - 1);
+                    const centroidDistance = Math.sqrt(
+                        Math.pow(centroidLat - centerPoint.lat, 2) + 
+                        Math.pow(centroidLng - centerPoint.lng, 2)
+                    );
+                    
+                    return centroidDistance <= radiusInDegrees;
+                }
+                return false;
+            } catch (e) {
+                console.error('Error in buffer check for feature:', feature.properties.County, e);
+                return false;
+            }
+        }
+
+        // Setup county filter
+        function setupCountyFilter(data) {
+            console.log('🏛️ Setting up county filter...');
+            
+            // Extract unique counties
+            const counties = [...new Set(data.features.map(f => f.properties.County || 'Unknown'))].sort();
+            selectedCounties = new Set(counties); // Start with all selected
+            
+            const countyFilter = document.getElementById('countyFilter');
+            if (!countyFilter) return;
+            
+            countyFilter.innerHTML = '';
+            
+            counties.forEach(county => {
+                const item = document.createElement('div');
+                item.className = 'county-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'county-checkbox';
+                checkbox.id = 'county_' + county.replace(/\s+/g, '_');
+                checkbox.checked = true;
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedCounties.add(county);
+                    } else {
+                        selectedCounties.delete(county);
+                    }
+                    applyAllFilters();
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = county;
+                label.style.fontSize = '11px';
+                label.style.cursor = 'pointer';
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                countyFilter.appendChild(item);
+            });
+            
+            console.log(`✅ County filter ready with ${counties.length} counties`);
+        }
+
+        // Select all counties
+        function selectAllCounties() {
+            const checkboxes = document.querySelectorAll('.county-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = true;
+                const county = cb.id.replace('county_', '').replace(/_/g, ' ');
+                selectedCounties.add(county);
+            });
+            applyAllFilters();
+        }
+
+        // Select no counties
+        function selectNoCounties() {
+            const checkboxes = document.querySelectorAll('.county-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                const county = cb.id.replace('county_', '').replace(/_/g, ' ');
+                selectedCounties.delete(county);
+            });
+            applyAllFilters();
         }
 
         // Load GeoJSON data with better error handling
@@ -605,13 +1013,18 @@
                 setupFilters();
                 console.log('✅ Filters configured');
                 
+                // Setup county filter
+                setupCountyFilter(geojson);
+                console.log('✅ County filter configured');
+                
                 // Load onto map
                 loadGeoJSON(geojson);
                 console.log('✅ Map loaded');
                 
                 // Update status
                 const featureCount = geojson.features.length;
-                updateStatus(`✅ Ready! ${featureCount} districts loaded. ${typeof L.Draw !== 'undefined' ? 'Use drawing tools in top-right.' : 'Click polygons to select.'}`);
+                const countyCount = new Set(geojson.features.map(f => f.properties.County)).size;
+                updateStatus(`✅ Ready! ${featureCount} districts, ${countyCount} counties loaded.`);
                 
                 // Force a sample color check
                 const sampleFeature = geojson.features[0];
@@ -643,14 +1056,14 @@
                 if (slider && value) {
                     slider.addEventListener('input', function() {
                         value.textContent = `Show areas ≥ ${this.value}%`;
-                        applyFilters();
+                        applyAllFilters();
                     });
                 }
             });
         }
 
-        // Apply filters - handle decimal percentages
-        function applyFilters() {
+        // Apply all filters (demographic + county)
+        function applyAllFilters() {
             if (!originalData) return;
             
             const filters = {
@@ -666,6 +1079,14 @@
                 ...originalData,
                 features: originalData.features.filter(feature => {
                     const props = feature.properties;
+                    
+                    // County filter
+                    const county = props.County || 'Unknown';
+                    if (!selectedCounties.has(county)) {
+                        return false;
+                    }
+                    
+                    // Demographic filters
                     return (props.Dem_pct || 0) >= filters.dem &&
                            (props.Rep_pct || 0) >= filters.rep &&
                            (props.White_Vap_pct || 0) >= filters.white &&
@@ -678,6 +1099,10 @@
             loadGeoJSON(filteredData);
             selectedFeatures = [];
             updateSummary();
+            
+            const visibleCount = filteredData.features.length;
+            const totalCount = originalData.features.length;
+            console.log(`🔍 Filters applied: ${visibleCount}/${totalCount} features visible`);
         }
 
         // Color coding - handle decimal percentages (0.65 = 65%)
